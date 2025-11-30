@@ -1,21 +1,29 @@
-const mysql = require('mysql2');
-const dotenv = require('dotenv');
+const mysql = require('mysql2/promise');
 
-dotenv.config({ path: '../.env' });
-
-const db = mysql.createConnection({
+const dbConfig = {
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME
-});
+};
 
-db.connect((err) => {
-  if (err) {
-    console.error('Помилка підключення до бази даних:', err);
-    return;
-  }
-  console.log('Підключення до бази даних успішне');
-});
+async function getConnection() {
+  return await mysql.createConnection(dbConfig);
+}
 
-module.exports = db;
+async function getQuery(query, params = []) {
+  const connection = await getConnection();
+  const [rows] = await connection.query(query, params);
+  connection.end();
+  return rows;
+}
+
+// For INSERT/UPDATE/DELETE: returns OkPacket with insertId/affectedRows
+async function run(query, params = []) {
+  const connection = await getConnection();
+  const [result] = await connection.execute(query, params);
+  connection.end();
+  return result; // OkPacket
+}
+
+module.exports = { dbConfig, getConnection, getQuery, run };

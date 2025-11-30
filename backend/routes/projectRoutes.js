@@ -3,6 +3,7 @@ const router = express.Router();
 const projectController = require('../controllers/projectController');
 const authenticate = require('../middleware/authenticate');
 
+
 // всі маршрути під '/api/projects' (в server.js)
 router.get('/', authenticate, projectController.getProjects);
 router.post('/', authenticate, projectController.createProject);

@@ -1,15 +1,15 @@
 // frontend/src/components/CreateTask.jsx
-import React, { useState } from 'react';
-import axios from 'axios';
+import React, { useState } from "react";
+import axios from "axios";
 
 const CreateTask = () => {
   // Стан для збереження введених даних
   const [taskData, setTaskData] = useState({
-    project_id: '',
-    title: '',
-    description: '',
-    assigned_to: '',
-    due_date: ''
+    project_id: "",
+    title: "",
+    description: "",
+    assigned_to: "",
+    due_date: "",
   });
 
   // Обробка змін у формах
@@ -17,7 +17,7 @@ const CreateTask = () => {
     const { name, value } = e.target;
     setTaskData((prevData) => ({
       ...prevData,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -26,18 +26,29 @@ const CreateTask = () => {
     e.preventDefault();
 
     // Перевірка, чи є всі поля
-    if (!taskData.project_id || !taskData.title || !taskData.assigned_to || !taskData.due_date) {
-      alert('Будь ласка, заповніть всі поля!');
+    if (
+      !taskData.project_id ||
+      !taskData.title ||
+      !taskData.assigned_to ||
+      !taskData.due_date
+    ) {
+      alert("Будь ласка, заповніть всі поля!");
       return;
     }
 
     try {
-      const response = await axios.post('http://localhost:5000/api/tasks', taskData);
-      console.log('Task created:', response.data);
-      alert('Завдання створено успішно!');
+      const response = await axios.post(
+        "http://localhost:5000/api/tasks",
+        taskData
+      );
+      console.log("Task created:", response.data);
+      alert("Завдання створено успішно!");
     } catch (error) {
-      console.error('Error creating task:', error.response ? error.response.data : error.message);
-      alert('Щось пішло не так. Спробуйте ще раз.');
+      console.error(
+        "Error creating task:",
+        error.response ? error.response.data : error.message
+      );
+      alert("Щось пішло не так. Спробуйте ще раз.");
     }
   };
 

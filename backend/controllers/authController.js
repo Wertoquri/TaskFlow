@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const pool = require('../db'); // підключення до MySQL
+const pool = require('../db')
+const { getConnection } = require('../db');
 
 const register = async (req, res) => {
   const { username, email, password } = req.body;

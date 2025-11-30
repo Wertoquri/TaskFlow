@@ -1,76 +1,73 @@
-const db = require('../db'); // Підключення до БД
+const { getQuery, run } = require('../db'); // Підключення до БД
 
-// ---------------- GET ALL PROJECTS ----------------
-const getProjects = (req, res) => {
-    const query = 'SELECT * FROM projects ORDER BY id ASC';
-    db.query(query, (err, results) => {
-        if (err) {
-            console.error('Get projects error:', err);
-            return res.status(500).json({ message: 'Server error', error: err });
+const getProjects = async (req, res) => {
+    try {
+        const ownerId = req.user?.id;
+        if (!ownerId) {
+            return res.status(400).json({ message: 'Owner not resolved from token' });
         }
-        res.json(results);
-    });
+        const projects = await getQuery('SELECT * FROM projects WHERE owner_id = ?', [ownerId]);
+        res.json(projects);
+    } catch (error) {
+        console.error('Get projects error:', error);
+        res.status(500).json({ message: 'Server error', error });
+    }
 };
-
 // ---------------- CREATE PROJECT ----------------
-const createProject = (req, res) => {
+const createProject = async (req, res) => {
     const { name, description } = req.body;
+    const ownerId = req.user?.id;
 
     if (!name) {
         return res.status(400).json({ message: 'Project name is required' });
     }
+    if (!ownerId) {
+        return res.status(400).json({ message: 'Owner not resolved from token' });
+    }
 
-    const query = 'INSERT INTO projects (name, description) VALUES (?, ?)';
-    db.query(query, [name, description || null], (err, results) => {
-        if (err) {
-            console.error('Create project error:', err);
-            return res.status(500).json({ message: 'Server error', error: err });
-        }
-        res.status(201).json({ message: 'Project created', projectId: results.insertId });
-    });
+    const query = 'INSERT INTO projects (name, description, owner_id) VALUES (?, ?, ?)';
+    try {
+        const result = await run(query, [name, description || null, ownerId]);
+        res.status(201).json({ message: 'Project created', projectId: result.insertId });
+    } catch (err) {
+        console.error('Create project error:', err);
+        res.status(500).json({ message: 'Server error', error: err });
+    }
 };
-
 // ---------------- UPDATE PROJECT ----------------
-const updateProject = (req, res) => {
+const updateProject = async (req, res) => {
     const { id, name, description } = req.body;
 
     const query = 'UPDATE projects SET name = ?, description = ? WHERE id = ?';
-    db.query(query, [name, description, id], (err, results) => {
-        if (err) {
-            console.error('Update project error:', err);
-            return res.status(500).json({ message: 'Server error', error: err });
-        }
+    try {
+        const results = await run(query, [name, description, id]);
         if (results.affectedRows === 0) {
             return res.status(404).json({ message: 'Project not found' });
         }
         res.json({ message: 'Project updated', id });
-    });
+    } catch (err) {
+        console.error('Update project error:', err);
+        res.status(500).json({ message: 'Server error', error: err });
+    }
 };
 
-const deleteProject = (req, res) => {
+const deleteProject = async (req, res) => {
     const { id } = req.params;
 
-    // Спочатку видаляємо всі задачі цього проекту
+    // Spawning all tasks from this project
     const deleteTasksQuery = 'DELETE FROM tasks WHERE project_id = ?';
-    db.query(deleteTasksQuery, [id], (err) => {
-        if (err) {
-            console.error('Delete tasks error:', err);
-            return res.status(500).json({ message: 'Error deleting tasks', error: err });
-        }
-
-        // Потім видаляємо сам проект
+    try {
+        await getQuery(deleteTasksQuery, [id]);
         const deleteProjectQuery = 'DELETE FROM projects WHERE id = ?';
-        db.query(deleteProjectQuery, [id], (err, results) => {
-            if (err) {
-                console.error('Delete project error:', err);
-                return res.status(500).json({ message: 'Error deleting project', error: err });
-            }
-            if (results.affectedRows === 0) {
-                return res.status(404).json({ message: 'Project not found' });
-            }
-            res.json({ message: 'Project deleted' });
-        });
-    });
+        const results = await run(deleteProjectQuery, [id]);
+        if (results.affectedRows === 0) {
+            return res.status(404).json({ message: 'Project not found' });
+        }
+        res.json({ message: 'Project deleted' });
+    } catch (err) {
+        console.error('Delete project error:', err);
+        res.status(500).json({ message: 'Error deleting project', error: err });
+    }
 };
 
 module.exports = { getProjects, createProject, updateProject, deleteProject };

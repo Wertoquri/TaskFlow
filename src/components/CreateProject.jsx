@@ -1,35 +1,39 @@
 // frontend/src/components/CreateProject.jsx
-import React, { useState } from 'react';
-import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from "react";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 const CreateProject = () => {
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const navigate = useNavigate(); // Заміна useHistory на useNavigate
 
   const handleCreateProject = async (e) => {
     e.preventDefault();
-    const token = localStorage.getItem('token'); // Токен з localStorage або context
+    const token = localStorage.getItem("token"); // Токен з localStorage або context
 
     if (!token) {
-      return alert('You must be logged in to create a project');
+      return alert("You must be logged in to create a project");
     }
 
     try {
-      const response = await axios.post('http://localhost:5000/api/projects', {
-        title,
-        description,
-        owner_id: 1, // В даному випадку припускаємо, що id користувача — це 1, насправді це значення повинно братися з токену
-      }, {
-        headers: {
-          Authorization: `Bearer ${token}`,
+      const response = await axios.post(
+        "http://localhost:5000/api/projects",
+        {
+          title,
+          description,
+          owner_id: 1, // В даному випадку припускаємо, що id користувача — це 1, насправді це значення повинно братися з токену
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
-      });
-      navigate('/dashboard'); // Заміна history.push на navigate
+      );
+      navigate("/dashboard"); // Заміна history.push на navigate
     } catch (error) {
       console.error(error);
-      alert('Failed to create project');
+      alert("Failed to create project");
     }
   };
 

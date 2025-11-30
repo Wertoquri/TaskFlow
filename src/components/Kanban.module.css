@@ -1,0 +1,210 @@
+.container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+.column {
+  background: linear-gradient(135deg, #f8fafc 0%, #e0e7ff 100%);
+  border: 2px solid #c7d2fe;
+  border-radius: 1rem;
+  min-height: 20rem;
+  padding: 1.25rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+}
+
+.column:hover {
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+.columnTitle {
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: #1e293b;
+  font-size: 1.25rem;
+  border-bottom: 3px solid #818cf8;
+  padding-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.taskCard {
+  background: white;
+  border: 2px solid #e0e7ff;
+  border-radius: 0.875rem;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  cursor: move;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.taskCard:hover {
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
+  border-color: #818cf8;
+}
+
+.taskTitle {
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+  font-size: 1.05rem;
+}
+
+.taskDescription {
+  font-size: 0.9rem;
+  color: #64748b;
+  margin-bottom: 0.75rem;
+  line-height: 1.5;
+}
+
+.priorityRow {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  margin-bottom: 0.75rem;
+  padding: 0.5rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-radius: 0.5rem;
+  border: 1px solid #e2e8f0;
+}
+
+.priorityLabel {
+  font-size: 0.85rem;
+  color: #475569;
+  font-weight: 600;
+}
+
+.prioritySelect {
+  font-size: 0.85rem;
+  border: 2px solid #cbd5e1;
+  border-radius: 0.5rem;
+  padding: 0.375rem 0.75rem;
+  transition: all 0.2s;
+  background: white;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.prioritySelect:hover {
+  border-color: #94a3b8;
+}
+
+.prioritySelect:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.labelsSection {
+  margin-top: 0.75rem;
+  padding: 0.625rem;
+  background: #f8fafc;
+  border-radius: 0.5rem;
+  border: 1px solid #e2e8f0;
+}
+
+.labelsEditMode {
+  display: flex;
+  gap: 0.375rem;
+  flex-wrap: wrap;
+}
+
+.labelChip {
+  font-size: 0.75rem;
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  border: 2px solid #60a5fa;
+  border-radius: 9999px;
+  padding: 0.375rem 0.75rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  transition: all 0.2s;
+}
+
+.labelChip:hover {
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(96, 165, 250, 0.3);
+}
+
+.labelRemove {
+  color: #dc2626;
+  font-weight: 700;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  transition: all 0.2s;
+  font-size: 1.1rem;
+}
+
+.labelRemove:hover {
+  color: #b91c1c;
+  transform: scale(1.2);
+}
+
+.labelInput {
+  font-size: 0.75rem;
+  border: 2px solid #cbd5e1;
+  border-radius: 0.5rem;
+  padding: 0.375rem 0.75rem;
+  width: 6rem;
+  transition: all 0.2s;
+  font-weight: 500;
+}
+
+.labelInput:hover {
+  border-color: #94a3b8;
+}
+
+.labelInput:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.labelConfirm {
+  font-size: 1rem;
+  color: #059669;
+  font-weight: 700;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.2s;
+}
+
+.labelConfirm:hover {
+  color: #047857;
+  transform: scale(1.2);
+}
+
+.labelsDisplayMode {
+  display: flex;
+  gap: 0.375rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.labelEdit {
+  font-size: 0.8rem;
+  color: #2563eb;
+  font-weight: 600;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  text-decoration: none;
+  border-radius: 0.375rem;
+  transition: all 0.2s;
+}
+
+.labelEdit:hover {
+  background: #dbeafe;
+  color: #1e40af;
+}
