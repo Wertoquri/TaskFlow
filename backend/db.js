@@ -7,6 +7,9 @@ const dbConfig = {
   database: process.env.DB_NAME
 };
 
+// Пул підключень для контролерів, які використовують pool.query
+const pool = mysql.createPool(dbConfig);
+
 async function getConnection() {
   return await mysql.createConnection(dbConfig);
 }
@@ -26,4 +29,4 @@ async function run(query, params = []) {
   return result; // OkPacket
 }
 
-module.exports = { dbConfig, getConnection, getQuery, run };
+module.exports = { dbConfig, pool, getConnection, getQuery, run };

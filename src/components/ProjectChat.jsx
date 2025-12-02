@@ -1,0 +1,337 @@
+import React, { useEffect, useState, useRef } from "react";
+import { useAuth } from "../context/AuthContext";
+import { getProjectMessages, sendProjectMessage, updateProjectMessage, deleteProjectMessage } from "../api";
+
+export default function ProjectChat({ projectId }) {
+  const { token, user, socket } = useAuth();
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [editContent, setEditContent] = useState("");
+  const messagesEndRef = useRef(null);
+
+  async function loadMessages() {
+    if (!token || !projectId) return;
+    setLoading(true);
+    try {
+      const rows = await getProjectMessages(projectId, token);
+      setMessages(rows || []);
+    } catch (err) {
+      console.error("Failed to load messages:", err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    loadMessages();
+  }, [token, projectId]);
+
+  useEffect(() => {
+    if (!socket) return;
+    const handleNew = (msg) => {
+      setMessages((prev) => {
+        if (prev.find(m => m.id === msg.id)) return prev;
+        return [...prev, msg];
+      });
+      scrollToBottom();
+    };
+    const handleUpdate = ({ id, content }) => {
+      setMessages((prev) => prev.map(m => m.id === id ? { ...m, content } : m));
+    };
+    const handleDelete = ({ id }) => {
+      setMessages((prev) => prev.filter(m => m.id !== id));
+    };
+    socket.on("chat:message", handleNew);
+    socket.on("chat:updated", handleUpdate);
+    socket.on("chat:deleted", handleDelete);
+    return () => {
+      socket.off("chat:message", handleNew);
+      socket.off("chat:updated", handleUpdate);
+      socket.off("chat:deleted", handleDelete);
+    };
+  }, [socket]);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  function scrollToBottom() {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }
+
+  async function handleSend(e) {
+    e.preventDefault();
+    if (!input.trim()) return;
+    const content = input.trim();
+    setInput("");
+    try {
+      const newMessage = await sendProjectMessage(projectId, content, token);
+      // Add message immediately (will be deduplicated if socket sends it again)
+      setMessages((prev) => {
+        if (prev.find(m => m.id === newMessage.id)) return prev;
+        return [...prev, newMessage];
+      });
+      scrollToBottom();
+    } catch (err) {
+      console.error("Failed to send message:", err);
+      alert("Не вдалося відправити повідомлення");
+    }
+  }
+
+  function startEdit(msg) {
+    setEditingId(msg.id);
+    setEditContent(msg.content);
+  }
+
+  async function handleEdit() {
+    if (!editContent.trim()) return;
+    try {
+      await updateProjectMessage(projectId, editingId, editContent.trim(), token);
+      setMessages((prev) => prev.map(m => m.id === editingId ? { ...m, content: editContent.trim() } : m));
+      setEditingId(null);
+      setEditContent("");
+    } catch (err) {
+      console.error("Failed to edit message:", err);
+      alert("Не вдалося редагувати повідомлення");
+    }
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setEditContent("");
+  }
+
+  async function handleDelete(msgId) {
+    if (!confirm("Видалити повідомлення?")) return;
+    try {
+      await deleteProjectMessage(projectId, msgId, token);
+      setMessages((prev) => prev.filter(m => m.id !== msgId));
+    } catch (err) {
+      console.error("Failed to delete message:", err);
+      alert("Не вдалося видалити повідомлення");
+    }
+  }
+
+  return (
+    <div
+      style={{
+        background: "#fff",
+        border: "none",
+        borderRadius: "16px",
+        padding: "24px",
+        boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+        display: "flex",
+        flexDirection: "column",
+        height: "500px",
+      }}
+    >
+      <h3 style={{ margin: "0 0 16px 0", fontSize: "18px", fontWeight: 700, color: "#1e293b" }}>
+        💬 Чат проєкту
+      </h3>
+
+      <div
+        style={{
+          flex: 1,
+          overflowY: "auto",
+          marginBottom: "12px",
+          padding: "8px",
+          background: "#f8fafc",
+          borderRadius: "6px",
+        }}
+      >
+        {loading ? (
+          <div style={{ color: "#64748b", textAlign: "center", padding: "20px" }}>
+            Завантаження...
+          </div>
+        ) : messages.length === 0 ? (
+          <div style={{ color: "#64748b", textAlign: "center", padding: "20px" }}>
+            Поки що немає повідомлень. Напишіть перше!
+          </div>
+        ) : (
+          messages.map((msg) => {
+            const isMe = msg.user_id === user?.id;
+            const isEditing = editingId === msg.id;
+            return (
+              <div
+                key={msg.id}
+                style={{
+                  display: "flex",
+                  justifyContent: isMe ? "flex-end" : "flex-start",
+                  marginBottom: "12px",
+                }}
+              >
+                <div
+                  style={{
+                    maxWidth: "70%",
+                    padding: "10px 14px",
+                    borderRadius: "12px",
+                    background: isMe ? "#3b82f6" : "#fff",
+                    color: isMe ? "#fff" : "#1e293b",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                    position: "relative",
+                  }}
+                >
+                  {!isMe && (
+                    <div
+                      style={{
+                        fontSize: "12px",
+                        fontWeight: 600,
+                        marginBottom: "4px",
+                        opacity: 0.8,
+                      }}
+                    >
+                      {msg.username || `User #${msg.user_id}`}
+                    </div>
+                  )}
+                  {isEditing ? (
+                    <div>
+                      <input
+                        type="text"
+                        value={editContent}
+                        onChange={(e) => setEditContent(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleEdit()}
+                        style={{
+                          width: "100%",
+                          padding: "6px 8px",
+                          border: "1px solid #cbd5e1",
+                          borderRadius: "4px",
+                          marginBottom: "6px",
+                          fontSize: "14px",
+                        }}
+                        autoFocus
+                      />
+                      <div style={{ display: "flex", gap: "6px" }}>
+                        <button
+                          onClick={handleEdit}
+                          style={{
+                            padding: "4px 10px",
+                            background: "#10b981",
+                            color: "#fff",
+                            border: "none",
+                            borderRadius: "4px",
+                            fontSize: "12px",
+                            cursor: "pointer",
+                          }}
+                        >
+                          ✓ Зберегти
+                        </button>
+                        <button
+                          onClick={cancelEdit}
+                          style={{
+                            padding: "4px 10px",
+                            background: "#ef4444",
+                            color: "#fff",
+                            border: "none",
+                            borderRadius: "4px",
+                            fontSize: "12px",
+                            cursor: "pointer",
+                          }}
+                        >
+                          ✕ Скасувати
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div style={{ fontSize: "14px", wordBreak: "break-word" }}>
+                        {msg.content}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: "11px",
+                          marginTop: "4px",
+                          opacity: 0.7,
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                        }}
+                      >
+                        <span>
+                          {new Date(msg.created_at).toLocaleTimeString("uk-UA", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                        {isMe && (
+                          <div style={{ display: "flex", gap: "6px", marginLeft: "8px" }}>
+                            <button
+                              onClick={() => startEdit(msg)}
+                              style={{
+                                background: "transparent",
+                                border: "none",
+                                cursor: "pointer",
+                                fontSize: "14px",
+                                padding: "2px",
+                              }}
+                              title="Редагувати"
+                            >
+                              ✏️
+                            </button>
+                            <button
+                              onClick={() => handleDelete(msg.id)}
+                              style={{
+                                background: "transparent",
+                                border: "none",
+                                cursor: "pointer",
+                                fontSize: "14px",
+                                padding: "2px",
+                              }}
+                              title="Видалити"
+                            >
+                              🗑️
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            );
+          })
+        )}
+        <div ref={messagesEndRef} />
+      </div>
+
+      <form
+        onSubmit={handleSend}
+        style={{ display: "flex", gap: "8px", alignItems: "center" }}
+      >
+        <input
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Введіть повідомлення..."
+          style={{
+            flex: 1,
+            padding: "10px 14px",
+            border: "1px solid #cbd5e1",
+            borderRadius: "8px",
+            fontSize: "14px",
+            outline: "none",
+          }}
+          autoComplete="off"
+        />
+        <button
+          type="submit"
+          disabled={!input.trim()}
+          style={{
+            padding: "10px 20px",
+            background: input.trim() ? "#3b82f6" : "#cbd5e1",
+            color: "#fff",
+            border: "none",
+            borderRadius: "8px",
+            fontSize: "14px",
+            fontWeight: 600,
+            cursor: input.trim() ? "pointer" : "not-allowed",
+            transition: "all 0.2s",
+          }}
+        >
+          📤 Відправити
+        </button>
+      </form>
+    </div>
+  );
+}

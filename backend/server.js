@@ -22,12 +22,20 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
+// Підключаємо роутер автентифікації (реєстрація, логін, верифікація email)
+const authRoutes = require('./routes/authRoutes');
+app.use('/api', authRoutes);
+
 // Підключаємо роутер проектів (CRUD)
 const projectRoutes = require('./routes/projectRoutes');
 app.use('/api/projects', projectRoutes);
 // Підключаємо роутер завдань (CRUD)
 const taskRoutes = require('./routes/taskRoutes');
 app.use('/api/tasks', taskRoutes);
+
+// Підключаємо роутер сповіщень
+const notificationsRoutes = require('./routes/notificationsRoutes');
+app.use('/api/notifications', notificationsRoutes);
 
 // Me endpoint (requires auth)
 const authenticate = require('./middleware/authenticate');
@@ -62,66 +70,7 @@ app.get('/', (req, res) => {
     res.send('Hello, TaskFlow API!');
 });
 
-// Реєстрація користувача
-app.post('/api/register', async (req, res) => {
-    const { username, email, password } = req.body;
-    try {
-        const conn = await getConnection();
-
-        // Перевірка, чи існує користувач
-        const [existing] = await conn.query("SELECT * FROM users WHERE email = ?", [email]);
-        if (existing.length > 0) {
-            await conn.end();
-            return res.status(400).json({ message: "User already exists" });
-        }
-
-        // Хешуємо пароль
-        const hashedPassword = await bcrypt.hash(password, 10);
-
-        // Додаємо користувача
-        await conn.query(
-            "INSERT INTO users (username, email, password) VALUES (?, ?, ?)",
-            [username, email, hashedPassword]
-        );
-
-        await conn.end();
-        res.json({ message: "Registration successful" });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: "Server error" });
-    }
-});
-
-// Логін користувача
-app.post('/api/login', async (req, res) => {
-    const { email, password } = req.body;
-    try {
-        const conn = await getConnection();
-        // Знаходимо користувача
-        const [rows] = await conn.query("SELECT * FROM users WHERE email = ?", [email]);
-        if (rows.length === 0) {
-            await conn.end();
-            return res.status(400).json({ message: "User not found" });
-        }
-        const user = rows[0];
-
-        // Перевірка пароля
-        const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) {
-            await conn.end();
-            return res.status(400).json({ message: "Invalid password" });
-        }
-
-        // Генеруємо JWT
-        const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-
-        await conn.end();
-        res.json({ token });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: "Server error" });
-    }
-});
+// Маршрути реєстрації/логіну перенесено в authRoutes з підтримкою верифікації email
 
 // HTTP server + Socket.io
 const server = http.createServer(app);
@@ -134,7 +83,16 @@ const io = new Server(server, {
 app.set('io', io);
 
 io.on('connection', (socket) => {
-    // Optionally authenticate socket with token
+    // Join project rooms and user personal room
+    socket.on('join-project', (projectId) => {
+        socket.join(`project:${projectId}`);
+    });
+    socket.on('leave-project', (projectId) => {
+        socket.leave(`project:${projectId}`);
+    });
+    socket.on('join-user', (userId) => {
+        socket.join(`user:${userId}`);
+    });
     socket.on('disconnect', () => {});
 });
 

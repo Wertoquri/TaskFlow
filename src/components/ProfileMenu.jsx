@@ -2,31 +2,31 @@ import React, { useState, useRef, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import styles from "./ProfileMenu.module.css";
 
-export default function ProfileMenu() {
+export default function ProfileMenu({ isOpen, onToggle }) {
   const { user, logout } = useAuth();
-  const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
   useEffect(() => {
+    if (!isOpen) return;
     function onDocClick(e) {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+      if (ref.current && !ref.current.contains(e.target)) onToggle();
     }
     document.addEventListener("click", onDocClick);
     return () => document.removeEventListener("click", onDocClick);
-  }, []);
+  }, [isOpen, onToggle]);
 
   return (
     <div ref={ref} className={styles.container}>
       <button
         aria-label="Profile"
-        onClick={() => setOpen((o) => !o)}
+        onClick={onToggle}
         className={styles.button}
       >
         <span role="img" aria-label="user" className={styles.icon}>
           👤
         </span>
       </button>
-      {open && (
+      {isOpen && (
         <div className={styles.dropdown}>
           <div className={styles.dropdownTitle}>Профіль</div>
           {!user ? (

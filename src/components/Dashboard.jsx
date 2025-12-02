@@ -9,6 +9,8 @@ import ProjectCard from "../components/ProjectCard";
 import ProjectModal from "../components/ProjectModal";
 import TasksModal from "../components/TasksModal";
 import ProfileMenu from "../components/ProfileMenu";
+import InvitationsBell from "../components/InvitationsBell";
+import NotificationsBell from "../components/NotificationsBell";
 import Kanban from "../components/Kanban";
 import styles from "./Dashboard.module.css";
 
@@ -28,6 +30,7 @@ export default function Dashboard() {
     localStorage.getItem("filterLabel") || ""
   );
   const [activeFilters, setActiveFilters] = useState(0);
+  const [openMenu, setOpenMenu] = useState(null); // 'notifications', 'invitations', 'profile', or null
   const projectsListRef = useRef(null);
   const headerRef = useRef(null);
   const animatedRef = useRef(false);
@@ -167,7 +170,13 @@ export default function Dashboard() {
               Керуйте своїми проектами та завданнями
             </p>
           </div>
-          <ProfileMenu />
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ display: "flex", gap: "8px" }}>
+              <NotificationsBell isOpen={openMenu === 'notifications'} onToggle={() => setOpenMenu(openMenu === 'notifications' ? null : 'notifications')} />
+              <InvitationsBell isOpen={openMenu === 'invitations'} onToggle={() => setOpenMenu(openMenu === 'invitations' ? null : 'invitations')} />
+            </div>
+            <ProfileMenu isOpen={openMenu === 'profile'} onToggle={() => setOpenMenu(openMenu === 'profile' ? null : 'profile')} />
+          </div>
         </div>
       </div>
       <div className={styles.content}>

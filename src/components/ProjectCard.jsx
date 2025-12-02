@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import styles from "./ProjectCard.module.css";
 
 export default function ProjectCard({
@@ -11,6 +12,8 @@ export default function ProjectCard({
   onDelete,
   onOpen,
 }) {
+  const navigate = useNavigate();
+
   return (
     <div className={styles.card} onClick={() => onOpen && onOpen(id)}>
       <h3 className={styles.title}>{name}</h3>
@@ -22,6 +25,9 @@ export default function ProjectCard({
         <div>♻️ Оновлено: {new Date(updated_at).toLocaleDateString()}</div>
       </div>
       <div className={styles.actions} onClick={(e) => e.stopPropagation()}>
+        <button onClick={() => navigate(`/project/${id}`)} className={styles.editButton}>
+          👥 Учасники
+        </button>
         <button onClick={() => onEdit(id)} className={styles.editButton}>
           ✏️ Редагувати
         </button>

@@ -1,4 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from "react";
+import io from "socket.io-client";
 import { useNavigate } from "react-router-dom";
 import axios from 'axios';
 import { getMe } from '../api';
@@ -8,6 +9,7 @@ export const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(localStorage.getItem("token") || null);
   const [user, setUser] = useState(null);
+  const [socket, setSocket] = useState(null);
   const navigate = useNavigate();
 
   function isTokenExpired(t) {
@@ -22,6 +24,8 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     if (!token) return;
+    // Attach token to axios defaults
+    axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
     if (isTokenExpired(token)) {
       // Автоматичний вихід при простроченому токені
       localStorage.removeItem('token');
@@ -47,6 +51,12 @@ export const AuthProvider = ({ children }) => {
   const login = (newToken, userData) => {
     localStorage.setItem("token", newToken);
     setToken(newToken);
+    // connect socket and join user room
+    const s = io("http://localhost:5000", { auth: { token: newToken } });
+    setSocket(s);
+    if (userData?.id) {
+      s.emit("join-user", userData.id);
+    }
     // fetch user via /me after setting token
     (async () => {
       try {
@@ -79,11 +89,16 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("token");
     setToken(null);
     setUser(null);
+    delete axios.defaults.headers.common["Authorization"];
     navigate("/login");
+    if (socket) {
+      socket.disconnect();
+      setSocket(null);
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, setUser }}>
+    <AuthContext.Provider value={{ user, token, login, logout, socket }}>
       {children}
     </AuthContext.Provider>
   );
