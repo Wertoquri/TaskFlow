@@ -108,16 +108,18 @@ npm run build
 ```
 
 ## 🖼 Screenshots
-Add your UI screenshots here (Dashboard, Kanban, Project Page, Chat).
 
-```
-assets/
-	screenshots/
-		dashboard.png
-		kanban.png
-		project-page.png
-		chat.png
-```
+### Login
+![Login](assets/screenshots/Login.png)
+
+### Registration
+![Registration](assets/screenshots/Register.png)
+
+### Dashboard
+![Dashboard](assets/screenshots/Dashboard.png)
+
+### Project Chat
+![Chat](assets/screenshots/Chat.png)
 
 ## 🔐 Authentication & Verification
 - Registration requires a valid email. A 6‑digit verification code is sent via SMTP.

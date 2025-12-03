@@ -107,16 +107,16 @@ export default function TasksModal({ open, onClose, project, filters }) {
     }
   }
 
-  function startEdit(t) {
-    setEditTask(t);
-    setTitle(t.title || "");
-    setDescription(t.description || "");
-    setStatus(t.status || "pending");
-    setPriority(t.priority || "medium");
+  function startEdit(task) {
+    setEditTask(task);
+    setTitle(task.title || "");
+    setDescription(task.description || "");
+    setStatus(task.status || "pending");
+    setPriority(task.priority || "medium");
     setLabelsInput(
-      Array.isArray(t.labels)
-        ? t.labels.join(", ")
-        : t.labels
+      Array.isArray(task.labels)
+        ? task.labels.join(", ")
+        : task.labels
         ? tryParseLabelsToString(t.labels)
         : ""
     );
@@ -275,25 +275,25 @@ export default function TasksModal({ open, onClose, project, filters }) {
                     }
                     return true;
                   })
-                  .map((t) => (
-                    <li key={t.id} className={styles.taskItem}>
+                  .map((task) => (
+                    <li key={task.id} className={styles.taskItem}>
                       <div className={styles.taskContent}>
                         <div className={styles.taskHeader}>
-                          <span className={styles.taskTitle}>{t.title}</span>
-                          {t.priority && (
-                            <span className={`${styles.priorityBadge} ${styles[`priority-${t.priority}`]}`}>
-                              {t.priority === 'high' ? '🔴' : t.priority === 'medium' ? '🟡' : '🟢'} {t.priority}
+                          <span className={styles.taskTitle}>{task.title}</span>
+                          {task.priority && (
+                            <span className={`${styles.priorityBadge} ${styles[`priority-${task.priority}`]}`}>
+                              {task.priority === 'high' ? '🔴' : task.priority === 'medium' ? '🟡' : '🟢'} {task.priority}
                             </span>
                           )}
                         </div>
-                        {t.description && (
+                        {task.description && (
                           <div className={styles.taskDescription}>
-                            {t.description}
+                            {task.description}
                           </div>
                         )}
-                        {t.labels && Array.isArray(t.labels) && t.labels.length > 0 && (
+                        {task.labels && Array.isArray(task.labels) && task.labels.length > 0 && (
                           <div className={styles.taskLabels}>
-                            {t.labels.map((label, idx) => (
+                            {task.labels.map((label, idx) => (
                               <span key={idx} className={styles.labelChip}>
                                 🏷️ {label}
                               </span>
@@ -302,18 +302,18 @@ export default function TasksModal({ open, onClose, project, filters }) {
                         )}
                       </div>
                       <div className={styles.taskActions}>
-                        <span className={`${styles.statusBadge} ${styles[`status-${t.status}`]}`}>
-                          {t.status === 'done' ? '✅' : t.status === 'in_progress' ? '🔄' : '⏳'} {t.status}
+                        <span className={`${styles.statusBadge} ${styles[`status-${task.status}`]}`}>
+                          {task.status === 'done' ? '✅' : task.status === 'in_progress' ? '🔄' : '⏳'} {task.status}
                         </span>
                         <button
-                          onClick={() => startEdit(t)}
+                          onClick={() => startEdit(task)}
                           className={styles.editButton}
                           title={t('editTaskBtnTitle')}
                         >
                           ✏️ {t('edit')}
                         </button>
                         <button
-                          onClick={() => handleDelete(t.id)}
+                          onClick={() => handleDelete(task.id)}
                           className={styles.deleteButton}
                           title={t('deleteTaskBtnTitle')}
                         >

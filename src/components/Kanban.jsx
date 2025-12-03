@@ -77,13 +77,13 @@ export default function Kanban({ project, filters }) {
   useEffect(() => {
     const s = io("http://localhost:5000");
     setSocket(s);
-    function onCreated(t) {
-      if (t.project_id !== project?.id) return;
-      setTasks((prev) => [t, ...prev]);
+    function onCreated(task) {
+      if (task.project_id !== project?.id) return;
+      setTasks((prev) => [task, ...prev]);
     }
-    function onUpdated(t) {
+    function onUpdated(task) {
       setTasks((prev) =>
-        prev.map((x) => (String(x.id) === String(t.id) ? { ...x, ...t } : x))
+        prev.map((x) => (String(x.id) === String(task.id) ? { ...x, ...task } : x))
       );
     }
     function onDeleted({ id }) {
@@ -123,12 +123,12 @@ export default function Kanban({ project, filters }) {
     e.preventDefault();
   }
 
-  const visible = (t) => {
-    if (filters?.status && t.status !== filters.status) return false;
-    if (filters?.priority && (t.priority || "medium") !== filters.priority)
+  const visible = (task) => {
+    if (filters?.status && task.status !== filters.status) return false;
+    if (filters?.priority && (task.priority || "medium") !== filters.priority)
       return false;
     if (filters?.label) {
-      const labels = Array.isArray(t.labels) ? t.labels : [];
+      const labels = Array.isArray(task.labels) ? task.labels : [];
       if (
         !labels.some((l) =>
           String(l).toLowerCase().includes(filters.label.toLowerCase())
@@ -153,22 +153,22 @@ export default function Kanban({ project, filters }) {
             {col.title}
           </div>
           {tasks
-            .filter((t) => t.status === col.key)
+            .filter((task) => task.status === col.key)
             .filter(visible)
-            .map((t) => (
+            .map((task) => (
               <div
-                key={t.id}
+                key={task.id}
                 draggable
-                onDragStart={(e) => onDragStart(e, t.id)}
+                onDragStart={(e) => onDragStart(e, task.id)}
                 className={styles.taskCard}
                 data-kanban-card
               >
                 <div className={styles.taskTitle}>
-                  {t.title}
+                  {task.title}
                 </div>
-                {t.description && (
+                {task.description && (
                   <div className={styles.taskDescription}>
-                    {t.description}
+                    {task.description}
                   </div>
                 )}
                 <div className={styles.priorityRow}>
@@ -176,19 +176,19 @@ export default function Kanban({ project, filters }) {
                     {t('priorityText')}
                   </span>
                   <select
-                    value={t.priority || "medium"}
+                    value={task.priority || "medium"}
                     onChange={async (e) => {
                       const newPriority = e.target.value;
                       // optimistic
                       setTasks((prev) =>
                         prev.map((x) =>
-                          x.id === t.id ? { ...x, priority: newPriority } : x
+                          x.id === task.id ? { ...x, priority: newPriority } : x
                         )
                       );
                       try {
                         const token = localStorage.getItem("token");
                         await updateTask(
-                          t.id,
+                          task.id,
                           { priority: newPriority },
                           token
                         );
@@ -200,8 +200,8 @@ export default function Kanban({ project, filters }) {
                         // revert on fail
                         setTasks((prev) =>
                           prev.map((x) =>
-                            x.id === t.id
-                              ? { ...x, priority: t.priority || "medium" }
+                            x.id === task.id
+                              ? { ...x, priority: task.priority || "medium" }
                               : x
                           )
                         );
@@ -219,9 +219,9 @@ export default function Kanban({ project, filters }) {
                   </select>
                 </div>
                 <div className={styles.labelsSection}>
-                  {editingLabels === t.id ? (
+                  {editingLabels === task.id ? (
                     <div className={styles.labelsEditMode}>
-                      {(Array.isArray(t.labels) ? t.labels : []).map(
+                      {(Array.isArray(task.labels) ? task.labels : []).map(
                         (l, idx) => (
                           <span
                             key={idx}
@@ -231,11 +231,11 @@ export default function Kanban({ project, filters }) {
                             <button
                               onClick={async () => {
                                 const newLabels = (
-                                  Array.isArray(t.labels) ? t.labels : []
+                                  Array.isArray(task.labels) ? task.labels : []
                                 ).filter((_, i) => i !== idx);
                                 setTasks((prev) =>
                                   prev.map((x) =>
-                                    x.id === t.id
+                                    x.id === task.id
                                       ? { ...x, labels: newLabels }
                                       : x
                                   )
@@ -243,7 +243,7 @@ export default function Kanban({ project, filters }) {
                                 try {
                                   const token = localStorage.getItem("token");
                                   await updateTask(
-                                    t.id,
+                                    task.id,
                                     { labels: newLabels },
                                     token
                                   );
@@ -254,8 +254,8 @@ export default function Kanban({ project, filters }) {
                                 } catch (err) {
                                   setTasks((prev) =>
                                     prev.map((x) =>
-                                      x.id === t.id
-                                        ? { ...x, labels: t.labels }
+                                      x.id === task.id
+                                        ? { ...x, labels: task.labels }
                                         : x
                                     )
                                   );
@@ -278,12 +278,12 @@ export default function Kanban({ project, filters }) {
                         onKeyDown={async (e) => {
                           if (e.key === "Enter" && newLabel.trim()) {
                             const newLabels = [
-                              ...(Array.isArray(t.labels) ? t.labels : []),
+                              ...(Array.isArray(task.labels) ? task.labels : []),
                               newLabel.trim(),
                             ];
                             setTasks((prev) =>
                               prev.map((x) =>
-                                x.id === t.id ? { ...x, labels: newLabels } : x
+                                x.id === task.id ? { ...x, labels: newLabels } : x
                               )
                             );
                             setNewLabel("");
@@ -293,7 +293,7 @@ export default function Kanban({ project, filters }) {
                               try {
                                 const token = localStorage.getItem("token");
                                 await updateTask(
-                                  t.id,
+                                  task.id,
                                   { labels: newLabels },
                                   token
                                 );
@@ -304,8 +304,8 @@ export default function Kanban({ project, filters }) {
                               } catch (err) {
                                 setTasks((prev) =>
                                   prev.map((x) =>
-                                    x.id === t.id
-                                      ? { ...x, labels: t.labels }
+                                    x.id === task.id
+                                      ? { ...x, labels: task.labels }
                                       : x
                                   )
                                 );
@@ -332,7 +332,7 @@ export default function Kanban({ project, filters }) {
                     </div>
                   ) : (
                     <div className={styles.labelsDisplayMode}>
-                      {(Array.isArray(t.labels) ? t.labels : []).map(
+                      {(Array.isArray(task.labels) ? task.labels : []).map(
                         (l, idx) => (
                           <span
                             key={idx}
@@ -343,7 +343,7 @@ export default function Kanban({ project, filters }) {
                         )
                       )}
                       <button
-                        onClick={() => setEditingLabels(t.id)}
+                        onClick={() => setEditingLabels(task.id)}
                         className={styles.labelEdit}
                       >
                         {t('labelEdit')}

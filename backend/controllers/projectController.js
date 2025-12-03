@@ -50,7 +50,7 @@ const createProject = async (req, res) => {
 const updateProject = async (req, res) => {
     const { id, name, description } = req.body;
 
-    const query = 'UPDATE projects SET name = ?, description = ? WHERE id = ?';
+    const query = 'UPDATE projects SET name = ?, description = ?, updated_at = NOW() WHERE id = ?';
     try {
         const results = await run(query, [name, description, id]);
         if (results.affectedRows === 0) {

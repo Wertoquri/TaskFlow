@@ -16,6 +16,12 @@ export default function ProjectCard({
   const navigate = useNavigate();
   const { t } = useI18n();
 
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '—';
+    const d = new Date(dateStr);
+    return isNaN(d.getTime()) ? '—' : d.toLocaleDateString();
+  };
+
   return (
     <div className={styles.card} onClick={() => onOpen && onOpen(id)}>
       <h3 className={styles.title}>{name}</h3>
@@ -23,8 +29,8 @@ export default function ProjectCard({
         {description || t('noDescription')}
       </div>
       <div className={styles.meta}>
-        <div>{t('created')}: {new Date(created_at).toLocaleDateString()}</div>
-        <div>{t('updated')}: {new Date(updated_at).toLocaleDateString()}</div>
+        <div>{t('created')}: {formatDate(created_at)}</div>
+        <div>{t('updated')}: {formatDate(updated_at)}</div>
       </div>
       <div className={styles.actions} onClick={(e) => e.stopPropagation()}>
         <button onClick={() => navigate(`/project/${id}`)} className={styles.editButton}>
