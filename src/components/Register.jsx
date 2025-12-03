@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { registerUser } from '../api';
 import VerifyEmail from './VerifyEmail';
 import styles from './Register.module.css';
+import { useI18n } from '../context/I18nContext.jsx';
 
 const Register = () => {
+  const { t } = useI18n();
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -12,27 +14,28 @@ const Register = () => {
   const [error, setError] = useState('');
   const [needsVerification, setNeedsVerification] = useState(false);
   const [userId, setUserId] = useState(null);
+  // Captcha removed
   const navigate = useNavigate();
 
   // Валідація на фронтенді
   const validateForm = () => {
     if (username.length < 3 || username.length > 20) {
-      return 'Username повинен містити від 3 до 20 символів';
+      return t('usernameLenErr');
     }
     if (!/^[a-zA-Z0-9_]+$/.test(username)) {
-      return 'Username може містити тільки літери, цифри та підкреслення';
+      return t('usernameCharsErr');
     }
     if (password.length < 8) {
-      return 'Пароль повинен містити мінімум 8 символів';
+      return t('passwordLenErr');
     }
     if (!/[A-Z]/.test(password)) {
-      return 'Пароль повинен містити хоча б одну велику літеру';
+      return t('passwordUpperErr');
     }
     if (!/[a-z]/.test(password)) {
-      return 'Пароль повинен містити хоча б одну малу літеру';
+      return t('passwordLowerErr');
     }
     if (!/[0-9]/.test(password)) {
-      return 'Пароль повинен містити хоча б одну цифру';
+      return t('passwordDigitErr');
     }
     return null;
   };
@@ -40,12 +43,15 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    // captcha removed
 
     const validationError = validateForm();
     if (validationError) {
       setError(validationError);
       return;
     }
+
+    // reCAPTCHA removed
 
     setLoading(true);
 
@@ -54,7 +60,7 @@ const Register = () => {
       setUserId(response.userId);
       setNeedsVerification(true);
     } catch (error) {
-      setError(error.response?.data?.message || 'Помилка реєстрації');
+      setError(error.response?.data?.message || t('registerError'));
     } finally {
       setLoading(false);
     }
@@ -80,9 +86,9 @@ const Register = () => {
     if (/[0-9]/.test(password)) strength++;
     if (/[^A-Za-z0-9]/.test(password)) strength++;
     
-    if (strength <= 2) return { label: 'Слабкий', color: '#ef4444' };
-    if (strength === 3) return { label: 'Середній', color: '#f59e0b' };
-    return { label: 'Сильний', color: '#10b981' };
+    if (strength <= 2) return { label: t('weak'), color: '#ef4444' };
+    if (strength === 3) return { label: t('medium'), color: '#f59e0b' };
+    return { label: t('strong'), color: '#10b981' };
   };
 
   const strength = passwordStrength();
@@ -91,12 +97,12 @@ const Register = () => {
     <div className={styles.container}>
       <div className={styles.card}>
         <div className={styles.header}>
-          <h2 className={styles.title}>Реєстрація</h2>
-          <p className={styles.subtitle}>Створіть акаунт для роботи з TaskFlow</p>
+          <h2 className={styles.title}>{t('registerTitle')}</h2>
+          <p className={styles.subtitle}>{t('registerSubtitle')}</p>
         </div>
         <form onSubmit={handleSubmit} className={styles.form}>
           <div className={styles.inputGroup}>
-            <label className={styles.label}>Ім'я користувача</label>
+            <label className={styles.label}>{t('username')}</label>
             <input
               placeholder="username123"
               value={username}
@@ -105,11 +111,11 @@ const Register = () => {
               className={styles.input}
             />
             <small style={{ color: '#64748b', fontSize: '12px', marginTop: '4px', display: 'block' }}>
-              3-20 символів, тільки літери, цифри та _
+              {t('usernameHint')}
             </small>
           </div>
           <div className={styles.inputGroup}>
-            <label className={styles.label}>Email</label>
+            <label className={styles.label}>{t('email')}</label>
             <input
               type="email"
               placeholder="example@mail.com"
@@ -120,7 +126,7 @@ const Register = () => {
             />
           </div>
           <div className={styles.inputGroup}>
-            <label className={styles.label}>Пароль</label>
+            <label className={styles.label}>{t('password')}</label>
             <input
               type="password"
               placeholder="••••••••"
@@ -130,7 +136,7 @@ const Register = () => {
               className={styles.input}
             />
             <small style={{ color: '#64748b', fontSize: '12px', marginTop: '4px', display: 'block' }}>
-              Мінімум 8 символів, велика літера, мала літера та цифра
+              {t('passwordLenErr')}
             </small>
             {strength && (
               <div style={{ marginTop: '8px' }}>
@@ -164,6 +170,8 @@ const Register = () => {
             </div>
           )}
 
+          {/* Captcha UI removed */}
+
           <button 
             type="submit" 
             disabled={loading}
@@ -173,12 +181,12 @@ const Register = () => {
               cursor: loading ? 'not-allowed' : 'pointer'
             }}
           >
-            {loading ? 'Реєстрація...' : 'Зареєструватись'}
+            {loading ? t('registerBtn') + '...' : t('registerBtn')}
           </button>
         </form>
         <div className={styles.footer}>
-          <span className={styles.footerText}>Вже маєте акаунт? </span>
-          <button onClick={() => navigate('/login')} className={styles.link}>Увійти</button>
+          <span className={styles.footerText}>{t('haveAccount')} </span>
+          <button onClick={() => navigate('/login')} className={styles.link}>{t('goLogin')}</button>
         </div>
       </div>
     </div>

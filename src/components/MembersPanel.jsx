@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { getProjectMembers, kickProjectMember, updateMemberPermissions } from "../api";
+import { useI18n } from "../context/I18nContext.jsx";
 
 export default function MembersPanel({ projectId }) {
   const { token, user } = useAuth();
@@ -9,6 +10,7 @@ export default function MembersPanel({ projectId }) {
   const [error, setError] = useState("");
   const [editingId, setEditingId] = useState(null);
   const [tempPerms, setTempPerms] = useState({});
+  const { t } = useI18n();
 
   async function load() {
     if (!token || !projectId) return;
@@ -18,7 +20,7 @@ export default function MembersPanel({ projectId }) {
       const rows = await getProjectMembers(projectId, token);
       setMembers(rows || []);
     } catch (e) {
-      setError(e?.response?.data?.message || e.message || "Помилка завантаження");
+      setError(e?.response?.data?.message || e.message || t('loadTasksError'));
     } finally {
       setLoading(false);
     }
@@ -27,7 +29,7 @@ export default function MembersPanel({ projectId }) {
   useEffect(() => { load(); }, [token, projectId]);
 
   async function onKick(memberId) {
-    if (!confirm("Видалити учасника з проєкту?")) return;
+    if (!confirm(t('confirmKickMember'))) return;
     try {
       await kickProjectMember(projectId, memberId, token);
       setMembers((prev) => prev.filter((m) => m.user_id !== memberId));
@@ -53,9 +55,9 @@ export default function MembersPanel({ projectId }) {
       setMembers((prev) => prev.map((x) => x.user_id === memberId ? { ...x, permissions: tempPerms } : x));
       setEditingId(null);
       setTempPerms({});
-      alert("✅ Права збережено!");
+      alert(t('rightsSaved'));
     } catch (e) {
-      alert(e?.response?.data?.message || e.message || "Не вдалося змінити права");
+      alert(e?.response?.data?.message || e.message || t('rightsChangeFailed'));
     }
   }
 
@@ -73,7 +75,7 @@ export default function MembersPanel({ projectId }) {
       boxShadow: "0 4px 6px rgba(0,0,0,0.1)"
     }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-        <h3 style={{ margin: 0, fontSize: "18px", fontWeight: 700, color: "#1e293b" }}>👥 Учасники проєкту</h3>
+        <h3 style={{ margin: 0, fontSize: "18px", fontWeight: 700, color: "#1e293b" }}>{t('projectMembersTitle')}</h3>
         <button 
           onClick={load} 
           disabled={loading}
@@ -89,16 +91,16 @@ export default function MembersPanel({ projectId }) {
             boxShadow: loading ? "none" : "0 2px 4px rgba(102,126,234,0.3)"
           }}
         >
-          🔄 Оновити
+          🔄 {t('refresh')}
         </button>
       </div>
       {error && <div style={{ color: "#dc2626", marginTop: 8, fontSize: "13px" }}>{error}</div>}
       {loading ? (
-        <div style={{ color: "#64748b", marginTop: 8, fontSize: "13px" }}>Завантаження…</div>
+        <div style={{ color: "#64748b", marginTop: 8, fontSize: "13px" }}>{t('loadingDots')}</div>
       ) : (
         <div style={{ marginTop: 12 }}>
           {members.length === 0 ? (
-            <div style={{ color: "#64748b", padding: "20px", textAlign: "center", fontSize: "14px" }}>Немає учасників</div>
+            <div style={{ color: "#64748b", padding: "20px", textAlign: "center", fontSize: "14px" }}>{t('noMembers')}</div>
           ) : (
             members.map((m) => {
               const isEditing = editingId === m.user_id;
@@ -115,8 +117,8 @@ export default function MembersPanel({ projectId }) {
               }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
                   <div>
-                    <div style={{ fontWeight: 600, fontSize: "15px", color: "#1e293b", marginBottom: "4px" }}>{m.username || `Користувач #${m.user_id}`}</div>
-                    <div style={{ fontSize: "13px", color: "#64748b" }}>Роль: {m.role || "member"}</div>
+                    <div style={{ fontWeight: 600, fontSize: "15px", color: "#1e293b", marginBottom: "4px" }}>{m.username || `${t('userHash')}${m.user_id}`}</div>
+                    <div style={{ fontSize: "13px", color: "#64748b" }}>{t('roleLabel')}: {m.role || "member"}</div>
                   </div>
                   <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
                     {isEditing ? (
@@ -161,19 +163,19 @@ export default function MembersPanel({ projectId }) {
                 </div>
                 <div style={{ display: "flex", gap: "20px", alignItems: "center", flexWrap: "wrap", paddingTop: "12px", borderTop: "1px solid #e2e8f0" }}>
                   <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", whiteSpace: "nowrap" }}>
-                    <input type="checkbox" checked={!!(perms.can_create)} onChange={() => onToggle(m.user_id, 'can_create')} /> Створення
+                    <input type="checkbox" checked={!!(perms.can_create)} onChange={() => onToggle(m.user_id, 'can_create')} /> {t('permCreate')}
                   </label>
                   <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", whiteSpace: "nowrap" }}>
-                    <input type="checkbox" checked={!!(perms.can_edit)} onChange={() => onToggle(m.user_id, 'can_edit')} /> Редагування
+                    <input type="checkbox" checked={!!(perms.can_edit)} onChange={() => onToggle(m.user_id, 'can_edit')} /> {t('permEdit')}
                   </label>
                   <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", whiteSpace: "nowrap" }}>
-                    <input type="checkbox" checked={!!(perms.can_delete)} onChange={() => onToggle(m.user_id, 'can_delete')} /> Видалення
+                    <input type="checkbox" checked={!!(perms.can_delete)} onChange={() => onToggle(m.user_id, 'can_delete')} /> {t('permDelete')}
                   </label>
                   <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", whiteSpace: "nowrap" }}>
-                    <input type="checkbox" checked={!!(perms.can_assign)} onChange={() => onToggle(m.user_id, 'can_assign')} /> Призначення
+                    <input type="checkbox" checked={!!(perms.can_assign)} onChange={() => onToggle(m.user_id, 'can_assign')} /> {t('permAssign')}
                   </label>
                   <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", whiteSpace: "nowrap" }}>
-                    <input type="checkbox" checked={!!(perms.can_comment)} onChange={() => onToggle(m.user_id, 'can_comment')} /> Коментарі
+                    <input type="checkbox" checked={!!(perms.can_comment)} onChange={() => onToggle(m.user_id, 'can_comment')} /> {t('permComment')}
                   </label>
                 </div>
               </div>

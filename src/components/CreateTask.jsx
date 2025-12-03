@@ -1,9 +1,13 @@
-// frontend/src/components/CreateTask.jsx
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { useI18n } from "../context/I18nContext.jsx";
+import { getProjectMembers } from "../api";
+import { useAuth } from "../context/AuthContext.jsx";
 
 const CreateTask = () => {
   // Стан для збереження введених даних
+  const { t } = useI18n();
+  const { token } = useAuth();
   const [taskData, setTaskData] = useState({
     project_id: "",
     title: "",
@@ -11,6 +15,7 @@ const CreateTask = () => {
     assigned_to: "",
     due_date: "",
   });
+  const [members, setMembers] = useState([]);
 
   // Обробка змін у формах
   const handleChange = (e) => {
@@ -32,7 +37,7 @@ const CreateTask = () => {
       !taskData.assigned_to ||
       !taskData.due_date
     ) {
-      alert("Будь ласка, заповніть всі поля!");
+      alert(t('pleaseFillAllFields'));
       return;
     }
 
@@ -42,22 +47,36 @@ const CreateTask = () => {
         taskData
       );
       console.log("Task created:", response.data);
-      alert("Завдання створено успішно!");
+      alert(t('taskCreatedSuccess'));
     } catch (error) {
       console.error(
         "Error creating task:",
         error.response ? error.response.data : error.message
       );
-      alert("Щось пішло не так. Спробуйте ще раз.");
+      alert(t('somethingWentWrong'));
     }
   };
 
+  // Load members when project_id changes
+  useEffect(() => {
+    async function loadMembers() {
+      if (!taskData.project_id) { setMembers([]); return; }
+      try {
+        const rows = await getProjectMembers(Number(taskData.project_id), token);
+        setMembers(rows || []);
+      } catch (e) {
+        setMembers([]);
+      }
+    }
+    loadMembers();
+  }, [taskData.project_id]);
+
   return (
     <div>
-      <h2>Створити завдання</h2>
+      <h2>{t('createTaskTitlePage')}</h2>
       <form onSubmit={handleSubmit}>
         <div>
-          <label>Project ID:</label>
+          <label>{t('projectIdLabel')}:</label>
           <input
             type="number"
             name="project_id"
@@ -67,7 +86,7 @@ const CreateTask = () => {
           />
         </div>
         <div>
-          <label>Title:</label>
+          <label>{t('titleLabel')}:</label>
           <input
             type="text"
             name="title"
@@ -77,7 +96,7 @@ const CreateTask = () => {
           />
         </div>
         <div>
-          <label>Description:</label>
+          <label>{t('descriptionLabel')}:</label>
           <textarea
             name="description"
             value={taskData.description}
@@ -86,17 +105,24 @@ const CreateTask = () => {
           />
         </div>
         <div>
-          <label>Assigned To (User ID):</label>
-          <input
-            type="number"
+          <label>{t('assignedToLabel')}:</label>
+          <select
             name="assigned_to"
             value={taskData.assigned_to}
             onChange={handleChange}
             required
-          />
+            disabled={!taskData.project_id}
+          >
+            <option value="">{t('selectMember') || 'Виберіть учасника'}</option>
+            {members.map((m) => (
+              <option key={m.user_id} value={m.user_id}>
+                {m.username || `${t('userHash')}${m.user_id}`}
+              </option>
+            ))}
+          </select>
         </div>
         <div>
-          <label>Due Date:</label>
+          <label>{t('dueDateLabel')}:</label>
           <input
             type="date"
             name="due_date"
@@ -105,7 +131,7 @@ const CreateTask = () => {
             required
           />
         </div>
-        <button type="submit">Створити завдання</button>
+        <button type="submit">{t('createTaskTitlePage')}</button>
       </form>
     </div>
   );

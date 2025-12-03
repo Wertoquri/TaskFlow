@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { getNotifications, markNotificationAsRead, markAllNotificationsAsRead, deleteNotification } from "../api";
+import { useI18n } from "../context/I18nContext.jsx";
 
 export default function NotificationsBell({ isOpen, onToggle }) {
   const { token, socket } = useAuth();
   const [notifications, setNotifications] = useState([]);
+  const { t } = useI18n();
 
   async function load() {
     if (!token) return;
@@ -64,7 +66,7 @@ export default function NotificationsBell({ isOpen, onToggle }) {
   return (
     <div style={{ position: "relative" }}>
       <button
-        title="Сповіщення"
+        title={t('notificationsTitle')}
         onClick={onToggle}
         style={{
           position: "relative",
@@ -133,7 +135,7 @@ export default function NotificationsBell({ isOpen, onToggle }) {
               marginBottom: "12px",
             }}
           >
-            <div style={{ fontWeight: 700, fontSize: "16px" }}>Сповіщення</div>
+            <div style={{ fontWeight: 700, fontSize: "16px" }}>{t('notificationsTitle')}</div>
             {unreadCount > 0 && (
               <button
                 onClick={onMarkAllAsRead}
@@ -146,13 +148,13 @@ export default function NotificationsBell({ isOpen, onToggle }) {
                   cursor: "pointer",
                 }}
               >
-                Прочитати всі
+                {t('markAllRead')}
               </button>
             )}
           </div>
           {notifications.length === 0 ? (
             <div style={{ color: "#64748b", textAlign: "center", padding: "16px" }}>
-              Немає сповіщень
+              {t('noNotifications')}
             </div>
           ) : (
             notifications.map((notif) => (

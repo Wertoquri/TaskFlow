@@ -1,16 +1,26 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { verifyEmail, resendVerificationCode } from '../api';
+import { useI18n } from '../context/I18nContext.jsx';
 
 export default function VerifyEmail({ userId, email, onVerified }) {
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [resending, setResending] = useState(false);
+  const [cooldown, setCooldown] = useState(0); // сек до наступного ресенду
+  const { t } = useI18n();
+
+  // Тікер для відліку часу блокування на клієнті
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const id = setInterval(() => setCooldown((s) => (s > 0 ? s - 1 : 0)), 1000);
+    return () => clearInterval(id);
+  }, [cooldown]);
 
   async function handleVerify(e) {
     e.preventDefault();
     if (!code || code.length !== 6) {
-      setError("Введіть 6-значний код");
+      setError(t('sixDigitsPrompt'));
       return;
     }
 
@@ -23,7 +33,7 @@ export default function VerifyEmail({ userId, email, onVerified }) {
         onVerified(data);
       }
     } catch (err) {
-      setError(err.response?.data?.message || "Помилка підтвердження");
+      setError(err.response?.data?.message || t('verifyError'));
     } finally {
       setLoading(false);
     }
@@ -35,9 +45,10 @@ export default function VerifyEmail({ userId, email, onVerified }) {
 
     try {
       await resendVerificationCode(userId);
-      alert("✅ Новий код надіслано на вашу пошту");
+      setCooldown(60); // локальний таймер
+      alert(t('resendSuccess'));
     } catch (err) {
-      setError(err.response?.data?.message || "Помилка повторного надсилання");
+      setError(err.response?.data?.message || t('resendError'));
     } finally {
       setResending(false);
     }
@@ -62,10 +73,10 @@ export default function VerifyEmail({ userId, email, onVerified }) {
       }}>
         <div style={{ textAlign: "center", marginBottom: "30px" }}>
           <h1 style={{ fontSize: "28px", fontWeight: 700, color: "#1e293b", marginBottom: "10px" }}>
-            📧 Підтвердження Email
+            {t('verifyEmailTitle')}
           </h1>
           <p style={{ color: "#64748b", fontSize: "14px", lineHeight: "1.6" }}>
-            Ми надіслали 6-значний код на<br />
+            {t('verifyEmailSentTo')}<br />
             <strong>{email}</strong>
           </p>
         </div>
@@ -79,7 +90,7 @@ export default function VerifyEmail({ userId, email, onVerified }) {
               fontSize: "14px",
               fontWeight: 600
             }}>
-              Код підтвердження
+              {t('verificationCode')}
             </label>
             <input
               type="text"
@@ -136,13 +147,13 @@ export default function VerifyEmail({ userId, email, onVerified }) {
               marginBottom: "16px"
             }}
           >
-            {loading ? "Перевірка..." : "Підтвердити"}
+            {loading ? t('verifying') : t('verify')}
           </button>
 
           <button
             type="button"
             onClick={handleResend}
-            disabled={resending}
+            disabled={resending || cooldown > 0}
             style={{
               width: "100%",
               padding: "12px",
@@ -152,11 +163,11 @@ export default function VerifyEmail({ userId, email, onVerified }) {
               borderRadius: "10px",
               fontSize: "14px",
               fontWeight: 600,
-              cursor: resending ? "not-allowed" : "pointer",
+              cursor: resending || cooldown > 0 ? "not-allowed" : "pointer",
               transition: "all 0.3s"
             }}
           >
-            {resending ? "Надсилання..." : "🔄 Надіслати код повторно"}
+            {resending ? t('resending') : cooldown > 0 ? `${t('resendIn')} ${cooldown}s` : t('resend')}
           </button>
         </form>
 
@@ -169,7 +180,7 @@ export default function VerifyEmail({ userId, email, onVerified }) {
           color: "#64748b",
           lineHeight: "1.6"
         }}>
-          <strong>💡 Порада:</strong> Перевірте папку "Спам" якщо не отримали код протягом кількох хвилин.
+          {t('tipSpam')}
         </div>
       </div>
     </div>

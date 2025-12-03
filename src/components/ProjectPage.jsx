@@ -1,4 +1,3 @@
-// Socket room join helper: include this component inside project view if needed
 export function ProjectSocketJoin({ projectId }) {
   const { socket } = useAuth();
   useEffect(() => {
@@ -8,7 +7,6 @@ export function ProjectSocketJoin({ projectId }) {
   }, [socket, projectId]);
   return null;
 }
-// src/components/ProjectPage.jsx
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
@@ -16,21 +14,34 @@ import { useAuth } from "../context/AuthContext.jsx";
 import MembersPanel from "./MembersPanel.jsx";
 import InviteUserPanel from "./InviteUserPanel.jsx";
 import ProjectChat from "./ProjectChat.jsx";
+import { useI18n } from "../context/I18nContext.jsx";
+import { getProjectMembers } from "../api";
 
 const ProjectPage = () => {
   const { id } = useParams(); // project id
   const navigate = useNavigate();
   const { token, user } = useAuth();
+  const { t } = useI18n();
 
   const [tasks, setTasks] = useState([]);
   const [newTitle, setNewTitle] = useState("");
   const [newDescription, setNewDescription] = useState("");
   const [newDueDate, setNewDueDate] = useState("");
   const [assignedTo, setAssignedTo] = useState("");
+  const [members, setMembers] = useState([]);
 
   useEffect(() => {
     if (!token) return;
     fetchTasks();
+    // Load project members for assignee dropdown
+    (async () => {
+      try {
+        const rows = await getProjectMembers(Number(id), token);
+        setMembers(rows || []);
+      } catch (e) {
+        // silently ignore, tasks view still works
+      }
+    })();
     // eslint-disable-next-line
   }, [token, id]);
 
@@ -49,7 +60,7 @@ const ProjectPage = () => {
 
   const addTask = async () => {
     if (!newTitle.trim()) {
-      return alert("Введіть назву");
+      return alert(t('promptTitleRequired') || 'Введіть назву');
     }
 
     const payload = {
@@ -70,12 +81,12 @@ const ProjectPage = () => {
       fetchTasks();
     } catch (err) {
       console.error("Add task error", err);
-      alert(err.response?.data?.message || "Помилка");
+      alert(err.response?.data?.message || (t('errorGeneric') || 'Помилка'));
     }
   };
 
   const deleteTask = async (taskId) => {
-    if (!confirm("Видалити завдання?")) return;
+    if (!confirm(t('confirmDeleteTask') || 'Видалити завдання?')) return;
     try {
       await axios.delete(`http://localhost:5000/api/tasks/${taskId}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -105,7 +116,7 @@ const ProjectPage = () => {
     } catch (err) {
       console.error("Update task error", err);
       const msg = err.response?.data?.message || err.message;
-      alert("Не вдалося оновити завдання: " + msg);
+      alert((t('updateTaskFailed') || 'Не вдалося оновити завдання: ') + msg);
     }
   };
 
@@ -114,7 +125,6 @@ const ProjectPage = () => {
       <ProjectSocketJoin projectId={Number(id)} />
       
       <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
-        {/* Header */}
         <div style={{ 
           background: "#fff", 
           borderRadius: "16px", 
@@ -126,8 +136,8 @@ const ProjectPage = () => {
           alignItems: "center"
         }}>
           <div>
-            <h1 style={{ margin: 0, fontSize: "28px", fontWeight: 700, color: "#1e293b" }}>📋 Проєкт #{id}</h1>
-            <p style={{ margin: "8px 0 0 0", color: "#64748b", fontSize: "14px" }}>Керування учасниками та спілкування</p>
+            <h1 style={{ margin: 0, fontSize: "28px", fontWeight: 700, color: "#1e293b" }}>📋 {t('projectLabel')} #{id}</h1>
+            <p style={{ margin: "8px 0 0 0", color: "#64748b", fontSize: "14px" }}>{t('projectManageMembersChat') || 'Керування учасниками та спілкування'}</p>
           </div>
           <button
             onClick={() => navigate("/dashboard")}
@@ -149,11 +159,10 @@ const ProjectPage = () => {
             onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-2px)"}
             onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}
           >
-            ← Назад до Dashboard
+            ← {t('backToDashboard') || 'Назад до Dashboard'}
           </button>
         </div>
 
-        {/* Main Grid */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "30px" }}>
           <div>
             <InviteUserPanel projectId={Number(id)} token={token} />
@@ -163,12 +172,10 @@ const ProjectPage = () => {
           </div>
         </div>
 
-        {/* Chat Section */}
         <div style={{ marginBottom: "30px" }}>
           <ProjectChat projectId={Number(id)} />
         </div>
 
-        {/* Tasks Section */}
         <div style={{ 
           background: "#fff", 
           borderRadius: "16px", 
@@ -176,7 +183,7 @@ const ProjectPage = () => {
           boxShadow: "0 4px 6px rgba(0,0,0,0.1)"
         }}>
           <h3 style={{ margin: "0 0 20px 0", fontSize: "18px", fontWeight: 700, color: "#1e293b" }}>
-            ✅ Завдання
+            ✅ {t('tasksTitle') || 'Завдання'}
           </h3>
 
           <div style={{ 
@@ -187,7 +194,7 @@ const ProjectPage = () => {
             alignItems: "center"
           }}>
             <input
-              placeholder="Назва"
+              placeholder={t('taskTitlePlaceholder') || 'Назва'}
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
               style={{
@@ -198,7 +205,7 @@ const ProjectPage = () => {
               }}
             />
             <input
-              placeholder="Опис"
+              placeholder={t('taskDescPlaceholder') || 'Опис'}
               value={newDescription}
               onChange={(e) => setNewDescription(e.target.value)}
               style={{
@@ -219,18 +226,24 @@ const ProjectPage = () => {
                 fontSize: "14px"
               }}
             />
-            <input
-              type="number"
-              placeholder="ID користувача"
+            <select
               value={assignedTo}
               onChange={(e) => setAssignedTo(e.target.value)}
               style={{
                 padding: "10px",
                 border: "1px solid #e2e8f0",
                 borderRadius: "8px",
-                fontSize: "14px"
+                fontSize: "14px",
+                background: "#fff"
               }}
-            />
+            >
+              <option value="">{t('selectMember') || 'Виберіть учасника'}</option>
+              {members.map(m => (
+                <option key={m.user_id} value={m.user_id}>
+                  {m.username || `${t('userHash')}${m.user_id}`}
+                </option>
+              ))}
+            </select>
             <button 
               onClick={addTask}
               style={{
@@ -246,7 +259,7 @@ const ProjectPage = () => {
                 transition: "all 0.3s"
               }}
             >
-              + Додати
+              + {t('add') || 'Додати'}
             </button>
           </div>
 
@@ -287,7 +300,7 @@ const ProjectPage = () => {
                       transition: "all 0.3s"
                     }}
                   >
-                    ✏️ Редагувати
+                    {t('edit')}
                   </button>
                   <button
                     onClick={() => deleteTask(task.id)}
@@ -303,7 +316,7 @@ const ProjectPage = () => {
                       transition: "all 0.3s"
                     }}
                   >
-                    🗑️ Видалити
+                    {t('delete')}
                   </button>
                 </div>
               </li>

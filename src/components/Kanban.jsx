@@ -3,12 +3,13 @@ import { getTasksByProject, updateTask } from "../api";
 import io from "socket.io-client";
 import Toast from "./Toast";
 import styles from "./Kanban.module.css";
+import { useI18n } from "../context/I18nContext.jsx";
 
-const columns = [
-  { key: "pending", title: "Pending" },
-  { key: "in_progress", title: "In Progress" },
-  { key: "done", title: "Done" },
-];
+const columnsFor = (t) => ([
+  { key: "pending", title: t('kanbanPending') },
+  { key: "in_progress", title: t('kanbanInProgress') },
+  { key: "done", title: t('kanbanDone') },
+]);
 
 export default function Kanban({ project, filters }) {
   const [tasks, setTasks] = useState([]);
@@ -19,6 +20,7 @@ export default function Kanban({ project, filters }) {
   const debounceTimer = useRef(null);
   const kanbanRef = useRef(null);
   const animatedRef = useRef(false);
+  const { t } = useI18n();
 
   useEffect(() => {
     async function load() {
@@ -139,7 +141,7 @@ export default function Kanban({ project, filters }) {
 
   return (
     <div className={styles.container} ref={kanbanRef}>
-      {columns.map((col) => (
+      {columnsFor(t).map((col) => (
         <div
           key={col.key}
           onDragOver={onDragOver}
@@ -171,7 +173,7 @@ export default function Kanban({ project, filters }) {
                 )}
                 <div className={styles.priorityRow}>
                   <span className={styles.priorityLabel}>
-                    🎯 Пріоритет:
+                    {t('priorityText')}
                   </span>
                   <select
                     value={t.priority || "medium"}
@@ -191,7 +193,7 @@ export default function Kanban({ project, filters }) {
                           token
                         );
                         setToast({
-                          message: "Пріоритет оновлено",
+                          message: t('priorityUpdated'),
                           type: "success",
                         });
                       } catch (err) {
@@ -204,7 +206,7 @@ export default function Kanban({ project, filters }) {
                           )
                         );
                         setToast({
-                          message: "Помилка оновлення пріоритету",
+                          message: t('priorityUpdateError'),
                           type: "error",
                         });
                       }
@@ -246,7 +248,7 @@ export default function Kanban({ project, filters }) {
                                     token
                                   );
                                   setToast({
-                                    message: "Мітку видалено",
+                                    message: t('labelRemoved'),
                                     type: "success",
                                   });
                                 } catch (err) {
@@ -258,7 +260,7 @@ export default function Kanban({ project, filters }) {
                                     )
                                   );
                                   setToast({
-                                    message: "Помилка видалення мітки",
+                                    message: t('labelRemoveError'),
                                     type: "error",
                                   });
                                 }
@@ -296,7 +298,7 @@ export default function Kanban({ project, filters }) {
                                   token
                                 );
                                 setToast({
-                                  message: "Мітку додано",
+                                  message: t('labelAdded'),
                                   type: "success",
                                 });
                               } catch (err) {
@@ -308,14 +310,14 @@ export default function Kanban({ project, filters }) {
                                   )
                                 );
                                 setToast({
-                                  message: "Помилка додавання мітки",
+                                  message: t('labelAddError'),
                                   type: "error",
                                 });
                               }
                             }, 300);
                           }
                         }}
-                        placeholder="+ мітка"
+                        placeholder={t('labelInputPlaceholder')}
                         className={styles.labelInput}
                       />
                       <button
@@ -344,7 +346,7 @@ export default function Kanban({ project, filters }) {
                         onClick={() => setEditingLabels(t.id)}
                         className={styles.labelEdit}
                       >
-                        ✏️ редагувати
+                        {t('labelEdit')}
                       </button>
                     </div>
                   )}

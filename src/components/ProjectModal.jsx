@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import styles from "./ProjectModal.module.css";
+import { useI18n } from "../context/I18nContext.jsx";
 
 export default function ProjectModal({
   open,
@@ -7,6 +8,7 @@ export default function ProjectModal({
   onSubmit,
   initialData, // { id, name, description }
 }) {
+  const { t } = useI18n();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [nameError, setNameError] = useState("");
@@ -58,11 +60,11 @@ export default function ProjectModal({
   function handleSubmit(e) {
     e.preventDefault();
     if (!name.trim()) {
-      setNameError("Назва проекту обов'язкова!");
+      setNameError(t('projectNameRequired'));
       return;
     }
     if (name.trim().length < 3) {
-      setNameError("Назва має бути не менше 3 символів");
+      setNameError(t('projectNameShort'));
       return;
     }
     setNameError("");
@@ -82,13 +84,13 @@ export default function ProjectModal({
       <form onSubmit={handleSubmit} className={styles.modal} data-modal-content>
         <div className={styles.header}>
           <h3 className={styles.title}>
-            {initialData ? "✏️ Редагувати проект" : "➕ Створити новий проект"}
+            {initialData ? t('editProjectTitle') : t('createProjectTitle')}
           </h3>
           <button
             type="button"
             onClick={onClose}
             className={styles.closeIcon}
-            title="Закрити"
+            title={t('close')}
           >
             ✕
           </button>
@@ -97,7 +99,7 @@ export default function ProjectModal({
           <div className={styles.inputGroup}>
             <label className={styles.label}>
               <span className={styles.labelIcon}>📌</span>
-              Назва проекту
+              {t('projectNameLabel')}
               <span className={styles.required}>*</span>
             </label>
             <input
@@ -107,7 +109,7 @@ export default function ProjectModal({
                 setNameError("");
               }}
               className={`${styles.input} ${nameError ? styles.inputError : ""}`}
-              placeholder="Введіть назву проекту..."
+              placeholder={t('projectNamePlaceholder')}
               autoFocus
               maxLength={100}
             />
@@ -117,13 +119,13 @@ export default function ProjectModal({
           <div className={styles.inputGroup}>
             <label className={styles.label}>
               <span className={styles.labelIcon}>📝</span>
-              Опис проекту
+              {t('projectDescLabel')}
             </label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className={styles.textarea}
-              placeholder="Додайте опис проекту (необов'язково)..."
+              placeholder={t('projectDescPlaceholder')}
               maxLength={500}
               rows={4}
             />
@@ -136,10 +138,10 @@ export default function ProjectModal({
             onClick={onClose}
             className={styles.cancelButton}
           >
-            Скасувати
+            {t('cancelBtn')}
           </button>
           <button type="submit" className={styles.submitButton}>
-            {initialData ? "💾 Зберегти зміни" : "🚀 Створити проект"}
+            {initialData ? t('saveChangesProject') : t('createProjectBtn')}
           </button>
         </div>
       </form>

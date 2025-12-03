@@ -1,12 +1,13 @@
-// frontend/src/components/Auth.js
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { useI18n } from '../context/I18nContext.jsx';
 
 const Auth = ({ setToken }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
+  const { t } = useI18n();
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -25,17 +26,17 @@ const Auth = ({ setToken }) => {
         type="email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
-        placeholder="Email"
+        placeholder={t('email')}
         required
       />
       <input
         type="password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
-        placeholder="Password"
+        placeholder={t('password')}
         required
       />
-      <button type="submit">Login</button>
+      <button type="submit">{t('loginBtn')}</button>
     </form>
   );
 };

@@ -1,10 +1,12 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import styles from "./ProfileMenu.module.css";
+import { useI18n } from "../context/I18nContext.jsx";
 
 export default function ProfileMenu({ isOpen, onToggle }) {
   const { user, logout } = useAuth();
   const ref = useRef(null);
+  const { t } = useI18n();
 
   useEffect(() => {
     if (!isOpen) return;
@@ -18,7 +20,7 @@ export default function ProfileMenu({ isOpen, onToggle }) {
   return (
     <div ref={ref} className={styles.container}>
       <button
-        aria-label="Profile"
+        aria-label={t('profile')}
         onClick={onToggle}
         className={styles.button}
       >
@@ -28,24 +30,24 @@ export default function ProfileMenu({ isOpen, onToggle }) {
       </button>
       {isOpen && (
         <div className={styles.dropdown}>
-          <div className={styles.dropdownTitle}>Профіль</div>
+          <div className={styles.dropdownTitle}>{t('profile')}</div>
           {!user ? (
-            <div className={styles.loading}>Завантаження...</div>
+            <div className={styles.loading}>{t('loading')}</div>
           ) : (
             <div className={styles.userInfo}>
               <div>
-                <span className={styles.userInfoLabel}>Ім'я:</span>{" "}
+                <span className={styles.userInfoLabel}>{t('nameLabel')}</span>{" "}
                 {user.username || "—"}
               </div>
               <div>
-                <span className={styles.userInfoLabel}>Email:</span>{" "}
+                <span className={styles.userInfoLabel}>{t('email')}:</span>{" "}
                 {user.email || "—"}
               </div>
             </div>
           )}
           <div className={styles.actions}>
             <button onClick={logout} className={styles.logoutButton}>
-              Вийти
+              {t('logout')}
             </button>
           </div>
         </div>

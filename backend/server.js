@@ -39,7 +39,7 @@ app.use('/api/notifications', notificationsRoutes);
 
 // Me endpoint (requires auth)
 const authenticate = require('./middleware/authenticate');
-const { getQuery } = require('./db');
+const { getQuery, run } = require('./db');
 app.get('/api/me', authenticate, async (req, res) => {
     try {
         const rows = await getQuery('SELECT id, username, email FROM users WHERE id = ?', [req.user.id]);
@@ -100,3 +100,19 @@ io.on('connection', (socket) => {
 server.listen(port, () => {
     console.log(`Сервер працює на порту ${port}`);
 });
+
+// Автоочищення непідтверджених акаунтів старших за 24 години (щогодини)
+setInterval(async () => {
+    try {
+        const result = await run(
+            `DELETE FROM users 
+             WHERE is_verified = 0 
+             AND created_at < (NOW() - INTERVAL 24 HOUR)`
+        );
+        if (result && result.affectedRows) {
+            console.log(`[cleanup] Видалено непідтверджених користувачів: ${result.affectedRows}`);
+        }
+    } catch (e) {
+        console.error('[cleanup] Помилка очищення непідтверджених користувачів:', e.message || e);
+    }
+}, 60 * 60 * 1000);

@@ -1,9 +1,11 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useAuth } from "../context/AuthContext";
 import { getProjectMessages, sendProjectMessage, updateProjectMessage, deleteProjectMessage } from "../api";
+import { useI18n } from "../context/I18nContext.jsx";
 
 export default function ProjectChat({ projectId }) {
   const { token, user, socket } = useAuth();
+  const { t } = useI18n();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -76,7 +78,7 @@ export default function ProjectChat({ projectId }) {
       scrollToBottom();
     } catch (err) {
       console.error("Failed to send message:", err);
-      alert("Не вдалося відправити повідомлення");
+      alert(t('sendMessageError'));
     }
   }
 
@@ -94,7 +96,7 @@ export default function ProjectChat({ projectId }) {
       setEditContent("");
     } catch (err) {
       console.error("Failed to edit message:", err);
-      alert("Не вдалося редагувати повідомлення");
+      alert(t('editMessageError'));
     }
   }
 
@@ -104,13 +106,13 @@ export default function ProjectChat({ projectId }) {
   }
 
   async function handleDelete(msgId) {
-    if (!confirm("Видалити повідомлення?")) return;
+    if (!confirm(t('confirmDeleteMessage'))) return;
     try {
       await deleteProjectMessage(projectId, msgId, token);
       setMessages((prev) => prev.filter(m => m.id !== msgId));
     } catch (err) {
       console.error("Failed to delete message:", err);
-      alert("Не вдалося видалити повідомлення");
+      alert(t('deleteMessageError'));
     }
   }
 
@@ -128,7 +130,7 @@ export default function ProjectChat({ projectId }) {
       }}
     >
       <h3 style={{ margin: "0 0 16px 0", fontSize: "18px", fontWeight: 700, color: "#1e293b" }}>
-        💬 Чат проєкту
+        {t('projectChatTitle')}
       </h3>
 
       <div
@@ -143,11 +145,11 @@ export default function ProjectChat({ projectId }) {
       >
         {loading ? (
           <div style={{ color: "#64748b", textAlign: "center", padding: "20px" }}>
-            Завантаження...
+            {t('messagesLoading')}
           </div>
         ) : messages.length === 0 ? (
           <div style={{ color: "#64748b", textAlign: "center", padding: "20px" }}>
-            Поки що немає повідомлень. Напишіть перше!
+            {t('noMessagesYet')}
           </div>
         ) : (
           messages.map((msg) => {
@@ -182,7 +184,7 @@ export default function ProjectChat({ projectId }) {
                         opacity: 0.8,
                       }}
                     >
-                      {msg.username || `User #${msg.user_id}`}
+                      {msg.username || `${t('userHash')}${msg.user_id}`}
                     </div>
                   )}
                   {isEditing ? (
@@ -215,7 +217,7 @@ export default function ProjectChat({ projectId }) {
                             cursor: "pointer",
                           }}
                         >
-                          ✓ Зберегти
+                          ✓ {t('save')}
                         </button>
                         <button
                           onClick={cancelEdit}
@@ -229,7 +231,7 @@ export default function ProjectChat({ projectId }) {
                             cursor: "pointer",
                           }}
                         >
-                          ✕ Скасувати
+                          ✕ {t('cancelAction')}
                         </button>
                       </div>
                     </div>
@@ -265,7 +267,7 @@ export default function ProjectChat({ projectId }) {
                                 fontSize: "14px",
                                 padding: "2px",
                               }}
-                              title="Редагувати"
+                              title={t('editTitle')}
                             >
                               ✏️
                             </button>
@@ -278,7 +280,7 @@ export default function ProjectChat({ projectId }) {
                                 fontSize: "14px",
                                 padding: "2px",
                               }}
-                              title="Видалити"
+                              title={t('deleteTitle')}
                             >
                               🗑️
                             </button>
@@ -303,7 +305,7 @@ export default function ProjectChat({ projectId }) {
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Введіть повідомлення..."
+          placeholder={t('messagePlaceholder')}
           style={{
             flex: 1,
             padding: "10px 14px",
@@ -329,7 +331,7 @@ export default function ProjectChat({ projectId }) {
             transition: "all 0.2s",
           }}
         >
-          📤 Відправити
+          📤 {t('send')}
         </button>
       </form>
     </div>

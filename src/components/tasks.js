@@ -1,11 +1,12 @@
-// frontend/src/components/Tasks.js
 import { useEffect, useState } from 'react';
 import io from 'socket.io-client';
+import { useI18n } from '../context/I18nContext.jsx';
 
 const socket = io('http://localhost:5000');
 
 const Tasks = () => {
   const [tasks, setTasks] = useState([]);
+  const { t } = useI18n();
 
   useEffect(() => {
     socket.on('task-updated', (updatedTask) => {
@@ -22,7 +23,7 @@ const Tasks = () => {
 
   return (
     <div>
-      <h3>Tasks</h3>
+      <h3>{t('tasksTitle')}</h3>
       <ul>
         {tasks.map((task) => (
           <li key={task.id}>{task.title} - {task.status}</li>

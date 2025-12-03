@@ -1,16 +1,18 @@
 import React, { useState } from "react";
 import { createInvitation } from "../api";
+import { useI18n } from "../context/I18nContext.jsx";
 
 export default function InviteUserPanel({ projectId, token, onSuccess }) {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const { t } = useI18n();
 
   async function handleInvite(e) {
     e.preventDefault();
     if (!email.trim()) {
-      setError("Введіть email");
+      setError(t('enterEmail'));
       return;
     }
 
@@ -20,11 +22,11 @@ export default function InviteUserPanel({ projectId, token, onSuccess }) {
 
     try {
       await createInvitation(projectId, email.trim(), token);
-      setSuccess(`Запрошення надіслано на ${email}`);
+      setSuccess(`${t('inviteSentTo')} ${email}`);
       setEmail("");
       onSuccess && onSuccess();
     } catch (err) {
-      setError(err.response?.data?.message || "Помилка відправки запрошення");
+      setError(err.response?.data?.message || t('inviteError'));
     } finally {
       setLoading(false);
     }
@@ -41,7 +43,7 @@ export default function InviteUserPanel({ projectId, token, onSuccess }) {
       }}
     >
       <h3 style={{ margin: "0 0 16px 0", fontSize: "18px", fontWeight: 700, color: "#1e293b" }}>
-        🔗 Запросити користувача
+        {t('inviteUserTitle')}
       </h3>
       <form onSubmit={handleInvite} style={{ display: "flex", gap: "8px", alignItems: "flex-start" }}>
         <div style={{ flex: 1 }}>
@@ -49,7 +51,7 @@ export default function InviteUserPanel({ projectId, token, onSuccess }) {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="Введіть email користувача"
+            placeholder={t('invitePlaceholder')}
             disabled={loading}
             style={{
               width: "100%",
@@ -88,7 +90,7 @@ export default function InviteUserPanel({ projectId, token, onSuccess }) {
             transition: "all 0.3s",
           }}
         >
-          {loading ? "Відправка..." : "Запросити"}
+          {loading ? t('inviting') : t('inviteBtn')}
         </button>
       </form>
     </div>

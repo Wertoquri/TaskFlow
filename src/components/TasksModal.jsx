@@ -2,8 +2,10 @@ import React, { useEffect, useState } from "react";
 import { getTasksByProject, createTask, updateTask, deleteTask } from "../api";
 import Toast from "./Toast";
 import styles from "./TasksModal.module.css";
+import { useI18n } from "../context/I18nContext.jsx";
 
 export default function TasksModal({ open, onClose, project, filters }) {
+  const { t } = useI18n();
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -25,7 +27,7 @@ export default function TasksModal({ open, onClose, project, filters }) {
         const data = await getTasksByProject(project.id, token);
         setTasks(data);
       } catch (e) {
-        setError("Не вдалося завантажити завдання");
+        setError(t('loadTasksError'));
       } finally {
         setLoading(false);
       }
@@ -101,7 +103,7 @@ export default function TasksModal({ open, onClose, project, filters }) {
     } catch (e) {
       // revert optimistic
       setTasks((prev) => prev.filter((t) => !String(t.id).startsWith("temp-")));
-      setToast({ message: "Не вдалося створити завдання", type: "error" });
+      setToast({ message: t('createTaskError'), type: "error" });
     }
   }
 
@@ -157,12 +159,12 @@ export default function TasksModal({ open, onClose, project, filters }) {
       setTasks(data);
       // Прибрано сповіщення про оновлення завдання за запитом користувача
     } catch (e) {
-      setToast({ message: "Не вдалося оновити завдання", type: "error" });
+      setToast({ message: t('updateTaskError'), type: "error" });
     }
   }
 
   async function handleDelete(id) {
-    if (!confirm("Видалити це завдання?")) return;
+    if (!confirm(t('confirmDeleteThisTask'))) return;
     try {
       const token = localStorage.getItem("token");
       // optimistic remove
@@ -172,11 +174,11 @@ export default function TasksModal({ open, onClose, project, filters }) {
       // sync
       const data = await getTasksByProject(project.id, token);
       setTasks(data);
-      setToast({ message: "Завдання видалено", type: "success" });
+      setToast({ message: t('taskDeleted'), type: "success" });
     } catch (e) {
       // revert
       setTasks((prev) => prev);
-      setToast({ message: "Не вдалося видалити завдання", type: "error" });
+      setToast({ message: t('deleteTaskError'), type: "error" });
     }
   }
 
@@ -209,18 +211,18 @@ export default function TasksModal({ open, onClose, project, filters }) {
       <div className={styles.modal} data-tasks-modal>
         <div className={styles.header}>
           <h3 className={styles.headerTitle}>
-            📋 Завдання проєкту: <span className={styles.projectName}>{project.name}</span>
+            {t('tasksProjectTitle')} <span className={styles.projectName}>{project.name}</span>
           </h3>
           <button
             onClick={onClose}
             className={styles.closeButton}
-            title="Закрити"
+            title={t('close')}
           >
             ✕
           </button>
         </div>
         <div className={styles.content}>
-          {loading && <div className={styles.loading}>⏳ Завантаження завдань...</div>}
+          {loading && <div className={styles.loading}>{t('loadingTasks')}</div>}
           {error && <div className={styles.error}>❌ {error}</div>}
           {!loading &&
             !error &&
@@ -246,8 +248,8 @@ export default function TasksModal({ open, onClose, project, filters }) {
             }).length === 0 ? (
               <div className={styles.emptyState}>
                 <div className={styles.emptyIcon}>📭</div>
-                <div className={styles.emptyText}>Завдань поки немає</div>
-                <div className={styles.emptyHint}>Створіть перше завдання нижче</div>
+                <div className={styles.emptyText}>{t('noTasksYet')}</div>
+                <div className={styles.emptyHint}>{t('createFirstTaskHint')}</div>
               </div>
             ) : (
               <ul className={styles.tasksList}>
@@ -306,16 +308,16 @@ export default function TasksModal({ open, onClose, project, filters }) {
                         <button
                           onClick={() => startEdit(t)}
                           className={styles.editButton}
-                          title="Редагувати завдання"
+                          title={t('editTaskBtnTitle')}
                         >
-                          ✏️ Редагувати
+                          ✏️ {t('edit')}
                         </button>
                         <button
                           onClick={() => handleDelete(t.id)}
                           className={styles.deleteButton}
-                          title="Видалити завдання"
+                          title={t('deleteTaskBtnTitle')}
                         >
-                          🗑️ Видалити
+                          {t('delete')}
                         </button>
                       </div>
                     </li>
@@ -325,7 +327,7 @@ export default function TasksModal({ open, onClose, project, filters }) {
           <hr className={styles.divider} />
           <div className={styles.formSection}>
             <h4 className={styles.formTitle}>
-              {editTask ? "✏️ Редагувати завдання" : "➕ Створити нове завдання"}
+              {editTask ? t('editTaskTitle') : t('createTaskTitle')}
             </h4>
             <form
               onSubmit={editTask ? handleUpdate : handleCreate}
@@ -334,13 +336,13 @@ export default function TasksModal({ open, onClose, project, filters }) {
               <div className={styles.inputGroup}>
                 <label className={styles.inputLabel}>
                   <span className={styles.labelIcon}>📌</span>
-                  Назва завдання
+                  {t('taskName')}
                   <span className={styles.required}>*</span>
                 </label>
                 <input
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Введіть назву завдання..."
+                  placeholder={t('taskNamePlaceholder')}
                   className={styles.input}
                   required
                   maxLength={150}
@@ -349,12 +351,12 @@ export default function TasksModal({ open, onClose, project, filters }) {
               <div className={styles.inputGroup}>
                 <label className={styles.inputLabel}>
                   <span className={styles.labelIcon}>📝</span>
-                  Опис
+                  {t('taskDescriptionLabel')}
                 </label>
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Додайте опис завдання..."
+                  placeholder={t('taskDescPlaceholderModal')}
                   className={styles.textarea}
                   rows={3}
                   maxLength={300}
@@ -364,7 +366,7 @@ export default function TasksModal({ open, onClose, project, filters }) {
                 <div className={styles.inputGroup}>
                   <label className={styles.inputLabel}>
                     <span className={styles.labelIcon}>📊</span>
-                    Статус
+                    {t('statusLabel')}
                   </label>
                   <select
                     value={status}
@@ -379,7 +381,7 @@ export default function TasksModal({ open, onClose, project, filters }) {
                 <div className={styles.inputGroup}>
                   <label className={styles.inputLabel}>
                     <span className={styles.labelIcon}>🎯</span>
-                    Пріоритет
+                    {t('priorityLabel')}
                   </label>
                   <select
                     value={priority}
@@ -395,12 +397,12 @@ export default function TasksModal({ open, onClose, project, filters }) {
               <div className={styles.inputGroup}>
                 <label className={styles.inputLabel}>
                   <span className={styles.labelIcon}>🏷️</span>
-                  Мітки
+                  {t('labelsLabel')}
                 </label>
                 <input
                   value={labelsInput}
                   onChange={(e) => setLabelsInput(e.target.value)}
-                  placeholder="Введіть мітки через кому (наприклад: urgent, bug, feature)..."
+                  placeholder={t('labelsPlaceholder')}
                   className={styles.input}
                 />
               </div>
@@ -411,14 +413,14 @@ export default function TasksModal({ open, onClose, project, filters }) {
                     onClick={cancelEdit}
                     className={styles.cancelEditButton}
                   >
-                    Скасувати
+                    {t('cancel')}
                   </button>
                 )}
                 <button
                   type="submit"
                   className={styles.submitButton}
                 >
-                  {editTask ? "💾 Зберегти зміни" : "🚀 Створити завдання"}
+                  {editTask ? t('saveChanges') : t('createTaskBtn')}
                 </button>
               </div>
             </form>

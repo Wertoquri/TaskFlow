@@ -11,10 +11,13 @@ import TasksModal from "../components/TasksModal";
 import ProfileMenu from "../components/ProfileMenu";
 import InvitationsBell from "../components/InvitationsBell";
 import NotificationsBell from "../components/NotificationsBell";
+import SettingsMenu from "../components/SettingsMenu";
 import Kanban from "../components/Kanban";
 import styles from "./Dashboard.module.css";
+import { useI18n } from "../context/I18nContext.jsx";
 
 export default function Dashboard() {
+  const { t } = useI18n();
   const [projects, setProjects] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalData, setModalData] = useState(null);
@@ -30,7 +33,7 @@ export default function Dashboard() {
     localStorage.getItem("filterLabel") || ""
   );
   const [activeFilters, setActiveFilters] = useState(0);
-  const [openMenu, setOpenMenu] = useState(null); // 'notifications', 'invitations', 'profile', or null
+  const [openMenu, setOpenMenu] = useState(null); // 'notifications' | 'invitations' | 'profile' | 'settings' | null
   const projectsListRef = useRef(null);
   const headerRef = useRef(null);
   const animatedRef = useRef(false);
@@ -165,15 +168,14 @@ export default function Dashboard() {
       <div className={styles.header} ref={headerRef}>
         <div className={styles.headerContent}>
           <div>
-            <h1 className={styles.headerTitle}>📅 TaskFlow Dashboard</h1>
-            <p className={styles.headerSubtitle}>
-              Керуйте своїми проектами та завданнями
-            </p>
+            <h1 className={styles.headerTitle}>{t('dashboardTitle')}</h1>
+            <p className={styles.headerSubtitle}>{t('dashboardSubtitle')}</p>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <div style={{ display: "flex", gap: "8px" }}>
               <NotificationsBell isOpen={openMenu === 'notifications'} onToggle={() => setOpenMenu(openMenu === 'notifications' ? null : 'notifications')} />
               <InvitationsBell isOpen={openMenu === 'invitations'} onToggle={() => setOpenMenu(openMenu === 'invitations' ? null : 'invitations')} />
+              <SettingsMenu isOpen={openMenu === 'settings'} onToggle={() => setOpenMenu(openMenu === 'settings' ? null : 'settings')} />
             </div>
             <ProfileMenu isOpen={openMenu === 'profile'} onToggle={() => setOpenMenu(openMenu === 'profile' ? null : 'profile')} />
           </div>
@@ -182,7 +184,7 @@ export default function Dashboard() {
       <div className={styles.content}>
         <div className={styles.toolbar}>
           <button onClick={handleCreate} className={styles.createButton}>
-            ➕ Створити проект
+            {t('createProject')}
           </button>
           <div className={styles.filterBar}>
             <div className={styles.filterGroup}>
@@ -191,31 +193,31 @@ export default function Dashboard() {
                 onChange={(e) => setFilterStatus(e.target.value)}
                 className={`${styles.filterSelect} ${filterStatus ? styles.filterActive : ''}`}
               >
-                <option value="">📊 Статус: всі</option>
-                <option value="pending">⏳ Pending</option>
-                <option value="in_progress">🔄 In Progress</option>
-                <option value="done">✅ Done</option>
+                <option value="">{t('filterStatusAll')}</option>
+                <option value="pending">{t('statusPending')}</option>
+                <option value="in_progress">{t('statusInProgress')}</option>
+                <option value="done">{t('statusDone')}</option>
               </select>
               <select
                 value={filterPriority}
                 onChange={(e) => setFilterPriority(e.target.value)}
                 className={`${styles.filterSelect} ${filterPriority ? styles.filterActive : ''}`}
               >
-                <option value="">🎯 Пріоритет: всі</option>
-                <option value="low">🟢 Low</option>
-                <option value="medium">🟡 Medium</option>
-                <option value="high">🔴 High</option>
+                <option value="">{t('filterPriorityAll')}</option>
+                <option value="low">{t('priorityLow')}</option>
+                <option value="medium">{t('priorityMedium')}</option>
+                <option value="high">{t('priorityHigh')}</option>
               </select>
               <input
                 value={filterLabel}
                 onChange={(e) => setFilterLabel(e.target.value)}
-                placeholder="🏷️ Пошук за міткою..."
+                placeholder={t('searchLabelPlaceholder')}
                 className={`${styles.filterInput} ${filterLabel ? styles.filterActive : ''}`}
               />
             </div>
             {activeFilters > 0 && (
-              <button onClick={clearAllFilters} className={styles.clearFiltersButton} title="Очистити всі фільтри">
-                ✕ Очистити ({activeFilters})
+              <button onClick={clearAllFilters} className={styles.clearFiltersButton} title={t('clearFilters')}>
+                {t('clearFilters')} ({activeFilters})
               </button>
             )}
           </div>
@@ -223,10 +225,8 @@ export default function Dashboard() {
         {projects.length === 0 ? (
           <div className={styles.emptyState}>
             <div className={styles.emptyIcon}>📂</div>
-            <div className={styles.emptyTitle}>Проектів ще немає</div>
-            <div className={styles.emptyText}>
-              Створіть перший проект, щоб почати роботу!
-            </div>
+            <div className={styles.emptyTitle}>{t('projectsEmptyTitle')}</div>
+            <div className={styles.emptyText}>{t('projectsEmptyText')}</div>
           </div>
         ) : (
           <div className={styles.projectsList} ref={projectsListRef}>
@@ -245,7 +245,7 @@ export default function Dashboard() {
         {selectedProject && (
           <div className={styles.kanbanSection}>
             <h3 className={styles.kanbanTitle}>
-              📋 Канбан дошка: {selectedProject.name}
+              {t('kanbanBoard')}: {selectedProject.name}
             </h3>
             <Kanban
               project={selectedProject}

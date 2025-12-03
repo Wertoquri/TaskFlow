@@ -2,8 +2,6 @@ import axios from 'axios';
 
 const API_URL = 'http://localhost:5000/api';
 
-// ====================== Auth ======================
-
 export const registerUser = async (username, email, password) => {
   const response = await axios.post(`${API_URL}/register`, { username, email, password });
   return response.data; // { userId, email } - now requires verification
@@ -28,8 +26,12 @@ export const getMe = async (token) => {
   return res.data; // { id, username, email }
 };
 
+export const deleteMyAccount = async (token) => {
+  const res = await axios.delete(`${API_URL}/account`, { headers: { Authorization: `Bearer ${token}` } });
+  return res.data;
+};
 
-// ====================== Projects ======================
+
 
 export const getProjects = async (token) => {
   const response = await axios.get(`${API_URL}/projects`, {
@@ -62,7 +64,6 @@ export const updateProject = async (id, name, description, token) => {
   return response.data;
 };
 
-// ====================== Tasks ======================
 
 export const getTasksByProject = async (projectId, token) => {
   const response = await axios.get(`${API_URL}/tasks/${projectId}`, {
@@ -96,7 +97,6 @@ export const deleteTask = async (id, token) => {
   return response.data;
 };
 
-// ====================== Invitations ======================
 
 export const createInvitation = async (projectId, email, token) => {
   const res = await axios.post(
@@ -132,7 +132,6 @@ export const declineInvitation = async (id, token) => {
   return res.data;
 };
 
-// ====================== Members & Permissions ======================
 
 export const getProjectMembers = async (projectId, token) => {
   const res = await axios.get(`${API_URL}/projects/${projectId}/members`, {
@@ -157,7 +156,6 @@ export const updateMemberPermissions = async (projectId, userId, permissions, to
   return res.data;
 };
 
-// ====================== Notifications ======================
 
 export const getNotifications = async (token) => {
   const res = await axios.get(`${API_URL}/notifications`, {
@@ -191,7 +189,6 @@ export const deleteNotification = async (id, token) => {
   return res.data;
 };
 
-// ====================== Chat Messages ======================
 
 export const getProjectMessages = async (projectId, token) => {
   const res = await axios.get(`${API_URL}/projects/${projectId}/messages`, {

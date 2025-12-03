@@ -4,8 +4,10 @@ import { useAuth } from "../context/AuthContext";
 import { loginUser } from "../api";
 import VerifyEmail from "./VerifyEmail";
 import styles from "./Login.module.css";
+import { useI18n } from "../context/I18nContext.jsx";
 
 const Login = () => {
+  const { t } = useI18n();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -30,7 +32,7 @@ const Login = () => {
         setUserId(response.userId);
         setNeedsVerification(true);
       } else {
-        setError(response?.message || "Невірні облікові дані");
+        setError(response?.message || t('loginInvalid'));
       }
     } finally {
       setLoading(false);
@@ -51,12 +53,12 @@ const Login = () => {
     <div className={styles.container}>
       <div className={styles.card}>
         <div className={styles.header}>
-          <h2 className={styles.title}>Вхід до TaskFlow</h2>
-          <p className={styles.subtitle}>Введіть свої дані для продовження</p>
+          <h2 className={styles.title}>{t('loginTitle')}</h2>
+          <p className={styles.subtitle}>{t('loginSubtitle')}</p>
         </div>
         <form onSubmit={handleSubmit} className={styles.form}>
           <div className={styles.inputGroup}>
-            <label className={styles.label}>Email</label>
+            <label className={styles.label}>{t('email')}</label>
             <input
               type="email"
               placeholder="example@mail.com"
@@ -67,7 +69,7 @@ const Login = () => {
             />
           </div>
           <div className={styles.inputGroup}>
-            <label className={styles.label}>Пароль</label>
+            <label className={styles.label}>{t('password')}</label>
             <input
               type="password"
               placeholder="••••••••"
@@ -100,13 +102,13 @@ const Login = () => {
               cursor: loading ? 'not-allowed' : 'pointer'
             }}
           >
-            {loading ? 'Вхід...' : 'Увійти'}
+            {loading ? t('loginBtn') + '...' : t('loginBtn')}
           </button>
         </form>
         <div className={styles.footer}>
-          <span className={styles.footerText}>Не маєте акаунту? </span>
+          <span className={styles.footerText}>{t('noAccount')} </span>
           <button onClick={() => navigate("/register")} className={styles.link}>
-            Зареєструватись
+            {t('goRegister')}
           </button>
         </div>
       </div>

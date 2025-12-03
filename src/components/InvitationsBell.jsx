@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { getMyInvitations, acceptInvitation, declineInvitation } from "../api";
+import { useI18n } from "../context/I18nContext.jsx";
 
 export default function InvitationsBell({ isOpen, onToggle }) {
   const { token, user, socket } = useAuth();
   const [invites, setInvites] = useState([]);
+  const { t } = useI18n();
 
   async function load() {
     if (!token) return;
@@ -46,7 +48,7 @@ export default function InvitationsBell({ isOpen, onToggle }) {
   return (
     <div style={{ position: "relative" }}>
       <button 
-        title="Запрошення" 
+        title={t('invitationsTitle')} 
         onClick={onToggle}
         style={{
           position: "relative",
@@ -91,19 +93,19 @@ export default function InvitationsBell({ isOpen, onToggle }) {
       </button>
       {isOpen && (
         <div style={{ position: "absolute", right: 0, top: "120%", background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8, padding: 8, minWidth: 260, boxShadow: "0 8px 24px rgba(0,0,0,.12)" }}>
-          <div style={{ fontWeight: 700, marginBottom: 8 }}>Запрошення</div>
+          <div style={{ fontWeight: 700, marginBottom: 8 }}>{t('invitationsTitle')}</div>
           {invites.length === 0 ? (
-            <div style={{ color: "#64748b" }}>Немає нових запрошень</div>
+            <div style={{ color: "#64748b" }}>{t('noInvitations')}</div>
           ) : (
             invites.map((inv) => (
               <div key={inv.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, padding: "6px 0" }}>
                 <div>
-                  <div style={{ fontWeight: 600 }}>Проєкт: {inv.project_name || inv.project_id}</div>
-                  <div style={{ fontSize: 12, color: "#64748b" }}>Запрошення #{inv.id}</div>
+                  <div style={{ fontWeight: 600 }}>{t('projectLabel')}: {inv.project_name || inv.project_id}</div>
+                  <div style={{ fontSize: 12, color: "#64748b" }}>{t('invitationNumber')}{inv.id}</div>
                 </div>
                 <div style={{ display: "flex", gap: 6 }}>
-                  <button onClick={() => onAccept(inv.id)} title="Прийняти">✅</button>
-                  <button onClick={() => onDecline(inv.id)} title="Відхилити">❌</button>
+                  <button onClick={() => onAccept(inv.id)} title={t('accept')}>✅</button>
+                  <button onClick={() => onDecline(inv.id)} title={t('decline')}>❌</button>
                 </div>
               </div>
             ))
