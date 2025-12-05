@@ -156,7 +156,7 @@ npm run build
 
 ## 📄 License
 
-This project is licensed under the [MIT License](https://github.com/Wertoquri/TaskFlow/LICENSE).
+This project is licensed under the [MIT License](https://github.com/Wertoquri/TaskFlow/blob/main/LICENSE).
 
 ---
 
