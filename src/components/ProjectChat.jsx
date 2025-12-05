@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useAuth } from "../context/AuthContext";
-import { getProjectMessages, sendProjectMessage, updateProjectMessage, deleteProjectMessage } from "../api";
+import { getProjectMessages, sendProjectMessage, updateProjectMessage, deleteProjectMessage, API_URL } from "../api";
 import { useI18n } from "../context/I18nContext.jsx";
 
 export default function ProjectChat({ projectId }) {
@@ -155,140 +155,41 @@ export default function ProjectChat({ projectId }) {
           messages.map((msg) => {
             const isMe = msg.user_id === user?.id;
             const isEditing = editingId === msg.id;
+            const avatarVal = msg.avatar || msg.avatar_url || null;
+            const backendBase = API_URL.replace(/\/api$/i, '');
+            const avatarSrc = avatarVal ? (avatarVal.startsWith('http') ? avatarVal : `${backendBase}${avatarVal}`) : null;
+            const timeStr = new Date(msg.created_at).toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
             return (
-              <div
-                key={msg.id}
-                style={{
-                  display: "flex",
-                  justifyContent: isMe ? "flex-end" : "flex-start",
-                  marginBottom: "12px",
-                }}
-              >
-                <div
-                  style={{
-                    maxWidth: "70%",
-                    padding: "10px 14px",
-                    borderRadius: "12px",
-                    background: isMe ? "#3b82f6" : "#fff",
-                    color: isMe ? "#fff" : "#1e293b",
-                    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-                    position: "relative",
-                  }}
-                >
-                  {!isMe && (
-                    <div
-                      style={{
-                        fontSize: "12px",
-                        fontWeight: 600,
-                        marginBottom: "4px",
-                        opacity: 0.8,
-                      }}
-                    >
-                      {msg.username || `${t('userHash')}${msg.user_id}`}
-                    </div>
+              <div key={msg.id} style={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start', marginBottom: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                  {avatarSrc && (
+                    <img src={avatarSrc} alt={msg.username || 'avatar'} style={{ width: 28, height: 28, borderRadius: 14, objectFit: 'cover', border: '2px solid #ffffff', boxShadow: '0 0 0 1px rgba(15,23,42,0.06)' }} />
                   )}
-                  {isEditing ? (
-                    <div>
-                      <input
-                        type="text"
-                        value={editContent}
-                        onChange={(e) => setEditContent(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleEdit()}
-                        style={{
-                          width: "100%",
-                          padding: "6px 8px",
-                          border: "1px solid #cbd5e1",
-                          borderRadius: "4px",
-                          marginBottom: "6px",
-                          fontSize: "14px",
-                        }}
-                        autoFocus
-                      />
-                      <div style={{ display: "flex", gap: "6px" }}>
-                        <button
-                          onClick={handleEdit}
-                          style={{
-                            padding: "4px 10px",
-                            background: "#10b981",
-                            color: "#fff",
-                            border: "none",
-                            borderRadius: "4px",
-                            fontSize: "12px",
-                            cursor: "pointer",
-                          }}
-                        >
-                          ✓ {t('save')}
-                        </button>
-                        <button
-                          onClick={cancelEdit}
-                          style={{
-                            padding: "4px 10px",
-                            background: "#ef4444",
-                            color: "#fff",
-                            border: "none",
-                            borderRadius: "4px",
-                            fontSize: "12px",
-                            cursor: "pointer",
-                          }}
-                        >
-                          ✕ {t('cancelAction')}
-                        </button>
+                  <div style={{ maxWidth: '70%', padding: '10px 14px', borderRadius: 12, background: isMe ? '#3b82f6' : '#fff', color: isMe ? '#fff' : '#1e293b', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', position: 'relative' }}>
+                    {!isMe && <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4, opacity: 0.8 }}>{msg.username || `${t('userHash')}${msg.user_id}`}</div>}
+                    {isEditing ? (
+                      <div>
+                        <input type="text" value={editContent} onChange={(e) => setEditContent(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleEdit()} style={{ width: '100%', padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: 4, marginBottom: 6, fontSize: 14 }} autoFocus />
+                        <div style={{ display: 'flex', gap: 6 }}>
+                          <button onClick={handleEdit} style={{ padding: '4px 10px', background: '#10b981', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}>✓ {t('save')}</button>
+                          <button onClick={cancelEdit} style={{ padding: '4px 10px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}>✕ {t('cancelAction')}</button>
+                        </div>
                       </div>
-                    </div>
-                  ) : (
-                    <>
-                      <div style={{ fontSize: "14px", wordBreak: "break-word" }}>
-                        {msg.content}
-                      </div>
-                      <div
-                        style={{
-                          fontSize: "11px",
-                          marginTop: "4px",
-                          opacity: 0.7,
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                        }}
-                      >
-                        <span>
-                          {new Date(msg.created_at).toLocaleTimeString("uk-UA", {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </span>
-                        {isMe && (
-                          <div style={{ display: "flex", gap: "6px", marginLeft: "8px" }}>
-                            <button
-                              onClick={() => startEdit(msg)}
-                              style={{
-                                background: "transparent",
-                                border: "none",
-                                cursor: "pointer",
-                                fontSize: "14px",
-                                padding: "2px",
-                              }}
-                              title={t('editTitle')}
-                            >
-                              ✏️
-                            </button>
-                            <button
-                              onClick={() => handleDelete(msg.id)}
-                              style={{
-                                background: "transparent",
-                                border: "none",
-                                cursor: "pointer",
-                                fontSize: "14px",
-                                padding: "2px",
-                              }}
-                              title={t('deleteTitle')}
-                            >
-                              🗑️
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </>
-                  )}
+                    ) : (
+                      <>
+                        <div style={{ fontSize: 14, wordBreak: 'break-word' }}>{msg.content}</div>
+                        <div style={{ fontSize: 11, marginTop: 4, opacity: 0.7, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span>{timeStr}</span>
+                          {isMe && (
+                            <div style={{ display: 'flex', gap: 6, marginLeft: 8 }}>
+                              <button onClick={() => startEdit(msg)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: 14, padding: 2 }} title={t('editTitle')}>✏️</button>
+                              <button onClick={() => handleDelete(msg.id)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: 14, padding: 2 }} title={t('deleteTitle')}>🗑️</button>
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
             );

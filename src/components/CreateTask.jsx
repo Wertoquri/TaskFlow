@@ -74,7 +74,7 @@ const CreateTask = () => {
   return (
     <div>
       <h2>{t('createTaskTitlePage')}</h2>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '16px' }}>
         <div>
           <label>{t('projectIdLabel')}:</label>
           <input

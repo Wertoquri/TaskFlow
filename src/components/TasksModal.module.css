@@ -224,6 +224,48 @@
   border: 1px solid #c4b5fd;
 }
 
+.attachmentItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  padding: 0.25rem 0.5rem;
+}
+
+.attachmentItem a {
+  color: #334155;
+  text-decoration: none;
+  font-size: 0.8rem;
+}
+
+.attachmentItem a:hover {
+  text-decoration: underline;
+}
+
+.attachmentDelete {
+  background: transparent;
+  border: none;
+  color: #dc2626;
+  font-weight: 800;
+  cursor: pointer;
+  padding: 0.125rem 0.45rem;
+  border-radius: 0.35rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  min-height: 28px;
+  font-size: 1rem;
+}
+
+.attachmentDelete:hover {
+  background: #fee2e2;
+  color: #b91c1c;
+  transform: translateY(-1px);
+}
+
 .taskActions {
   display: flex;
   flex-direction: column;
@@ -345,7 +387,7 @@
 .form {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1.5rem;
   max-width: 100%;
 }
 
@@ -412,7 +454,7 @@
 .selectGrid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
+  gap: 1.5rem;
   width: 100%;
   max-width: 100%;
 }
@@ -460,4 +502,60 @@
   background: #f8fafc;
   border-color: #cbd5e1;
   color: #475569;
+}
+
+/* Activity UI */
+.activityButton {
+  font-size: 0.85rem;
+  background: #eef2ff;
+  border: 1px solid #c7d2fe;
+  color: #1e40af;
+  padding: 0.4rem 0.6rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+
+.activityList {
+  margin-top: 0.5rem;
+  border-left: 3px solid #e6edf8;
+  padding-left: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.activityItem {
+  background: #fbfcff;
+  border: 1px solid #eef2ff;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+}
+
+.activityHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  margin-bottom: 0.25rem;
+}
+
+.activityTime {
+  color: #64748b;
+  font-size: 0.75rem;
+}
+
+.activityBody {
+  font-size: 0.85rem;
+  color: #334155;
+}
+
+.activityMeta {
+  margin-top: 0.25rem;
+  font-size: 0.8rem;
+  color: #475569;
+}
+
+.activityLoading {
+  color: #64748b;
+  font-size: 0.9rem;
 }

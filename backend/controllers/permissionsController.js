@@ -49,3 +49,20 @@ async function updateMemberPermissions(req, res) {
 }
 
 module.exports = { getPermissions, updatePermissions, updateMemberPermissions };
+
+// Clear per-user permissions (set to NULL so default applies)
+async function clearMemberPermissions(req, res) {
+  const projectId = Number(req.params.id);
+  const targetUserId = Number(req.params.userId);
+  const requesterId = req.user.id;
+  try {
+    const me = await getQuery('SELECT role FROM project_members WHERE project_id = ? AND user_id = ?', [projectId, requesterId]);
+    if (!me.length || me[0].role !== 'admin') return res.status(403).json({ message: 'Admin only' });
+    const member = await getQuery('SELECT id FROM project_members WHERE project_id = ? AND user_id = ?', [projectId, targetUserId]);
+    if (!member.length) return res.status(404).json({ message: 'Member not found' });
+    await run('UPDATE project_members SET permissions = NULL WHERE project_id = ? AND user_id = ?', [projectId, targetUserId]);
+    res.json({ message: 'Member permissions cleared' });
+  } catch (e) { console.error('clearMemberPermissions ERROR:', e); res.status(500).json({ message: 'Server error' }); }
+}
+
+module.exports.clearMemberPermissions = clearMemberPermissions;

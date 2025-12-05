@@ -15,7 +15,8 @@ import MembersPanel from "./MembersPanel.jsx";
 import InviteUserPanel from "./InviteUserPanel.jsx";
 import ProjectChat from "./ProjectChat.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
-import { getProjectMembers } from "../api";
+import { getProjectMembers, getProjectActivity, clearProjectActivity } from "../api";
+import io from "socket.io-client";
 
 const ProjectPage = () => {
   const { id } = useParams(); // project id
@@ -29,10 +30,16 @@ const ProjectPage = () => {
   const [newDueDate, setNewDueDate] = useState("");
   const [assignedTo, setAssignedTo] = useState("");
   const [members, setMembers] = useState([]);
+  const [projectActivity, setProjectActivity] = useState([]);
+  const [activityPage, setActivityPage] = useState(1);
+  const [activityHasMore, setActivityHasMore] = useState(false);
+  const [activityLoading, setActivityLoading] = useState(false);
+  const [socket, setSocket] = useState(null);
 
   useEffect(() => {
     if (!token) return;
     fetchTasks();
+    loadProjectActivity(1);
     // Load project members for assignee dropdown
     (async () => {
       try {
@@ -45,6 +52,28 @@ const ProjectPage = () => {
     // eslint-disable-next-line
   }, [token, id]);
 
+  useEffect(() => {
+    // Real-time project activity: listen to task-activity and append if task belongs to this project
+    const s = io("http://localhost:5000");
+    setSocket(s);
+    function onTaskActivity(activity) {
+      try {
+        const belongs = Number(activity.project_id) === Number(id);
+        if (!belongs) return;
+        // If user previously paged beyond first page, refresh to keep newest at top
+        if (activityPage > 1) {
+          loadProjectActivity(1);
+        } else {
+          setProjectActivity((prev) => [activity, ...prev]);
+        }
+      } catch (e) {
+        console.error('ProjectPage task-activity handler error', e);
+      }
+    }
+    s.on('task-activity', onTaskActivity);
+    return () => { s.off('task-activity', onTaskActivity); s.disconnect(); };
+  }, [tasks]);
+
   const fetchTasks = async () => {
     try {
       const res = await axios.get(`http://localhost:5000/api/tasks/${id}`, {
@@ -55,6 +84,22 @@ const ProjectPage = () => {
       console.error("Error loading tasks", err);
       // якщо 401/403 — перенаправити на логін
       if (err.response?.status === 401) navigate("/login");
+    }
+  };
+
+  const loadProjectActivity = async (page = 1) => {
+    if (!token) return;
+    try {
+      setActivityLoading(true);
+      const data = await getProjectActivity(Number(id), page, 20, token);
+      if (page === 1) setProjectActivity(data.items || []);
+      else setProjectActivity((p) => [...p, ...(data.items || [])]);
+      setActivityPage(data.page || page);
+      setActivityHasMore(Boolean(data.hasMore));
+    } catch (err) {
+      console.error('Load project activity error', err);
+    } finally {
+      setActivityLoading(false);
     }
   };
 
@@ -94,12 +139,12 @@ const ProjectPage = () => {
       setTasks((s) => s.filter((t) => t.id !== taskId));
     } catch (err) {
       console.error("Delete task error", err);
-      alert("Не вдалося видалити завдання");
+      alert(t('deleteTaskError'));
     }
   };
 
   const updateTask = async (taskId) => {
-    const newName = prompt("Нова назва завдання:");
+    const newName = prompt(t('promptNewTaskTitle') || 'Нова назва завдання:');
     if (!newName) return;
     try {
       await axios.put(
@@ -188,8 +233,8 @@ const ProjectPage = () => {
 
           <div style={{ 
             display: "grid", 
-            gridTemplateColumns: "1fr 2fr 150px 150px auto", 
-            gap: "12px",
+            gridTemplateColumns: "1fr 2fr 160px 180px minmax(120px, 220px)", 
+            gap: "20px",
             marginBottom: "20px",
             alignItems: "center"
           }}>
@@ -198,7 +243,7 @@ const ProjectPage = () => {
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
               style={{
-                padding: "10px",
+                padding: "12px",
                 border: "1px solid #e2e8f0",
                 borderRadius: "8px",
                 fontSize: "14px"
@@ -209,7 +254,7 @@ const ProjectPage = () => {
               value={newDescription}
               onChange={(e) => setNewDescription(e.target.value)}
               style={{
-                padding: "10px",
+                padding: "12px",
                 border: "1px solid #e2e8f0",
                 borderRadius: "8px",
                 fontSize: "14px"
@@ -220,47 +265,64 @@ const ProjectPage = () => {
               value={newDueDate}
               onChange={(e) => setNewDueDate(e.target.value)}
               style={{
-                padding: "10px",
+                padding: "12px",
                 border: "1px solid #e2e8f0",
                 borderRadius: "8px",
                 fontSize: "14px"
               }}
             />
-            <select
-              value={assignedTo}
-              onChange={(e) => setAssignedTo(e.target.value)}
-              style={{
-                padding: "10px",
-                border: "1px solid #e2e8f0",
-                borderRadius: "8px",
-                fontSize: "14px",
-                background: "#fff"
-              }}
-            >
-              <option value="">{t('selectMember') || 'Виберіть учасника'}</option>
-              {members.map(m => (
-                <option key={m.user_id} value={m.user_id}>
-                  {m.username || `${t('userHash')}${m.user_id}`}
-                </option>
-              ))}
-            </select>
-            <button 
-              onClick={addTask}
-              style={{
-                padding: "10px 20px",
-                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                color: "#fff",
-                border: "none",
-                borderRadius: "8px",
-                fontSize: "14px",
-                fontWeight: 600,
-                cursor: "pointer",
-                boxShadow: "0 2px 4px rgba(102,126,234,0.3)",
-                transition: "all 0.3s"
-              }}
-            >
-              + {t('add') || 'Додати'}
-            </button>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+              <select
+                value={assignedTo}
+                onChange={(e) => setAssignedTo(e.target.value)}
+                style={{
+                  padding: "10px",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: "8px",
+                  fontSize: "14px",
+                  background: "#fff"
+                }}
+              >
+                <option value="">{t('selectMember') || 'Виберіть учасника'}</option>
+                {members.map((m) => (
+                  <option key={m.user_id} value={m.user_id}>
+                    {m.username || `${t('userHash')}${m.user_id}`}
+                  </option>
+                ))}
+              </select>
+              <button
+                onClick={async () => {
+                  try {
+                    const rows = await getProjectMembers(Number(id), token);
+                    setMembers(rows || []);
+                  } catch {}
+                }}
+                style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#ffffff', cursor: 'pointer' }}
+              >{t('refresh') || 'Оновити'}</button>
+            </div>
+            {members.length === 0 && (
+              <div style={{ color: '#64748b', fontSize: 12 }}>{t('noMembers') || 'Немає учасників'}</div>
+            )}
+            <div style={{ justifySelf: 'end' }}>
+              <button
+                onClick={addTask}
+                style={{
+                  padding: "10px 20px",
+                  background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "8px",
+                  fontSize: "14px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  boxShadow: "0 2px 4px rgba(102,126,234,0.3)",
+                  transition: "all 0.3s",
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                + {t('add')}
+              </button>
+            </div>
           </div>
 
           <ul style={{ 
@@ -287,7 +349,10 @@ const ProjectPage = () => {
                 </div>
                 <div style={{ display: "flex", gap: "8px" }}>
                   <button 
-                    onClick={() => updateTask(task.id)}
+                    onClick={() => {
+                      console.log('ProjectPage edit click', { taskId: task.id });
+                      updateTask(task.id)
+                    }}
                     style={{
                       padding: "8px 16px",
                       background: "#10b981",
@@ -322,6 +387,99 @@ const ProjectPage = () => {
               </li>
             ))}
           </ul>
+        </div>
+        
+        <div style={{ marginTop: 20, background: "#fff", borderRadius: "16px", padding: "24px", boxShadow: "0 4px 6px rgba(0,0,0,0.06)" }}>
+          <h3 style={{ margin: "0 0 12px 0", fontSize: "18px", fontWeight: 700 }}>📝 {t('projectActivity') || 'Активність проекту'}</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+              <button
+                onClick={async () => {
+                  if (!confirm(t('clearActivityConfirm') || 'Are you sure?')) return;
+                  try {
+                    await clearProjectActivity(Number(id), token || localStorage.getItem('token'));
+                    setProjectActivity([]);
+                    alert(t('activityClearedSuccess') || 'Project activity cleared');
+                  } catch (err) {
+                    console.error('Clear activity failed', err);
+                    alert(err?.response?.data?.message || err?.message || 'Failed to clear activity');
+                  }
+                }}
+                style={{
+                  padding: '8px 12px',
+                  borderRadius: 8,
+                  border: 'none',
+                  background: 'linear-gradient(90deg,#f97316,#ef4444)',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                }}
+              >
+                {t('clearActivity')}
+              </button>
+            </div>
+            {projectActivity.length === 0 && !activityLoading && (
+              <div style={{ color: '#64748b' }}>{t('noActivityYet') || 'Активності поки немає'}</div>
+            )}
+            {projectActivity.map((a) => {
+              // Safely parse metadata if it's a JSON string
+              let meta = a.metadata;
+              if (typeof meta === 'string') {
+                try { meta = JSON.parse(meta); } catch { /* leave as string */ }
+              }
+              // Localize type title. If the localized string contains placeholders
+              // (e.g. "{filename}") don't show the raw template as the title —
+              // fallback to a short type label instead and put the interpolated
+              // sentence into the body.
+              const typeKey = `activity.${a.type}`;
+              const rawTitle = t(typeKey);
+              let title = rawTitle;
+              // If the localized title still contains an unfilled placeholder,
+              // fallback to a short label (humanized type)
+              if (typeof rawTitle === 'string' && rawTitle.includes('{')) {
+                // humanize type, e.g. 'attachment_added' -> 'attachment added'
+                title = a.type.replace(/_/g, ' ');
+              }
+              // Build a concise body string from metadata
+              let body = '';
+              if (meta && typeof meta === 'object') {
+                // Prefer common fields
+                if (a.type === 'task_updated') {
+                  const changes = [];
+                  if (meta.status) changes.push(`${t('statusLabel') || 'Status'}: ${meta.status}`);
+                  if (meta.priority) changes.push(`${t('priorityLabel') || 'Priority'}: ${meta.priority}`);
+                  if (meta.title) changes.push(`${t('taskName') || 'Title'}: ${meta.title}`);
+                  const changesStr = changes.join(', ');
+                  body = changesStr ? t('activity.task_updated_changes', { changes: changesStr }) : '';
+                } else if (a.type === 'attachment_added') {
+                  body = meta.filename ? t('activity.attachment_added', { filename: meta.filename }) : t('activity.attachment_added_generic');
+                } else if (a.type === 'attachment_deleted') {
+                  body = meta.filename ? t('activity.attachment_deleted', { filename: meta.filename }) : t('activity.attachment_deleted_generic');
+                } else {
+                  body = JSON.stringify(meta);
+                }
+              } else if (typeof meta === 'string') {
+                body = meta;
+              }
+
+              return (
+                <div key={a.id} style={{ padding: 12, borderRadius: 8, background: '#f8fafc', display: 'grid', gridTemplateColumns: '1fr auto', alignItems: 'center', gap: 10 }}>
+                  <div>
+                    <div style={{ fontWeight: 700 }}>{a.username || `user:${a.user_id}`}</div>
+                    <div style={{ color: '#475569', fontSize: 13 }}>{title}{body ? ` — ${body}` : ''}</div>
+                  </div>
+                  <div style={{ color: '#94a3b8', fontSize: 12, textAlign: 'right' }}>{new Date(a.created_at).toLocaleString()}</div>
+                </div>
+              );
+            })}
+            {activityHasMore && (
+              <div style={{ textAlign: 'center' }}>
+                <button onClick={() => loadProjectActivity(activityPage + 1)} disabled={activityLoading} style={{ padding: '8px 12px', borderRadius: 8, border: 'none', background: '#eef2ff', cursor: 'pointer' }}>
+                  {activityLoading ? t('loading') : t('loadMore') || 'Load more'}
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

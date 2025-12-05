@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5000/api';
+export const API_URL = 'http://localhost:5000/api';
 
 export const registerUser = async (username, email, password) => {
   const response = await axios.post(`${API_URL}/register`, { username, email, password });
@@ -97,6 +97,73 @@ export const deleteTask = async (id, token) => {
   return response.data;
 };
 
+export const uploadTaskAttachment = async (taskId, file, token) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  const res = await axios.post(
+    `${API_URL}/tasks/${taskId}/attachments`,
+    formData,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'multipart/form-data',
+      },
+    }
+  );
+  return res.data;
+};
+
+export const getTaskAttachments = async (taskId, token) => {
+  const res = await axios.get(`${API_URL}/tasks/${taskId}/attachments`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return res.data;
+};
+
+export const deleteTaskAttachment = async (taskId, attachmentId, token) => {
+  const res = await axios.delete(`${API_URL}/tasks/${taskId}/attachments/${attachmentId}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return res.data;
+};
+
+export const getTaskActivity = async (taskId, page = 1, limit = 20, token) => {
+  const res = await axios.get(`${API_URL}/tasks/${taskId}/activity?page=${page}&limit=${limit}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return res.data; // { items, page, limit, total, hasMore }
+};
+
+export const getProjectActivity = async (projectId, page = 1, limit = 20, token) => {
+  const res = await axios.get(`${API_URL}/projects/${projectId}/activity?page=${page}&limit=${limit}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return res.data; // { items, page, limit, total, hasMore }
+};
+
+export const uploadAvatar = async (file, token) => {
+  const fd = new FormData();
+  fd.append('avatar', file);
+  const res = await axios.post(`${API_URL}/me/avatar`, fd, {
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' },
+  });
+  return res.data;
+};
+
+export const updateMe = async (payload, token) => {
+  const res = await axios.patch(`${API_URL}/me`, payload, {
+    headers: token ? { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' }
+  });
+  return res.data;
+};
+
+export const clearProjectActivity = async (projectId, token) => {
+  const res = await axios.delete(`${API_URL}/projects/${projectId}/activity`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return res.data;
+};
+
 
 export const createInvitation = async (projectId, email, token) => {
   const res = await axios.post(
@@ -152,6 +219,15 @@ export const updateMemberPermissions = async (projectId, userId, permissions, to
     `${API_URL}/projects/${projectId}/members/${userId}/permissions`,
     permissions,
     { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } }
+  );
+  return res.data;
+};
+
+export const clearMemberPermissions = async (projectId, userId, token) => {
+  const res = await axios.post(
+    `${API_URL}/projects/${projectId}/members/${userId}/clear-permissions`,
+    {},
+    { headers: { Authorization: `Bearer ${token}` } }
   );
   return res.data;
 };

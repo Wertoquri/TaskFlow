@@ -30,7 +30,7 @@ export default function SettingsMenu({ isOpen, onToggle }) {
       logout();
       window.location.href = '/login';
     } catch (e) {
-      alert('Не вдалося видалити акаунт');
+      alert(t('deleteAccountFailed'));
     } finally {
       setLoading(false);
     }

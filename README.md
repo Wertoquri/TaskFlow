@@ -10,99 +10,105 @@ Modern project/task management web app with email verification, real‑time upda
 	<a href="#-authentication--verification">Auth</a> ·
 	<a href="#-internationalization-uaen">i18n</a> ·
 	<a href="#-screenshots">Screenshots</a> ·
-	<a href="#-api-overview">API</a> ·
-	<a href="#-troubleshooting">Troubleshooting</a>
-</p>
+	# TaskFlow
 
-<p align="center">
-	<img alt="Built with Vite" src="https://img.shields.io/badge/Built%20with-Vite-646CFF?logo=vite" />
-	<img alt="React" src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white" />
-	<img alt="Node" src="https://img.shields.io/badge/Node.js-24-339933?logo=node.js&logoColor=white" />
-	<img alt="License" src="https://img.shields.io/badge/License-Proprietary-grey" />
-</p>
+	Lightweight project & task management with real-time chat, attachments, avatars and i18n (Ukr/Eng).
 
-## ✨ Features
-- Authentication with email verification flow (verification code via email)
-- Projects CRUD with modal editing
-- Tasks management: create, edit, delete, status/priority, labels
-- Kanban board view with drag‑like interactions (UI driven)
-- Project chat with live updates via Socket.IO
-- Invitations: invite users by email, accept/decline from bell dropdown
-- Members management with permissions and kick member
-- Global i18n: full UI translations (UA/EN) through `I18nContext`
-- Clean overlays: dropdowns and modals correctly stack over headers
+	**Quick links:** Features · Tech Stack · Structure · Setup · Migrations · i18n · API
 
-## 🧱 Tech Stack
-- Frontend: React (Vite), React Router, Axios, Socket.IO client
-- Backend: Node.js, Express, MySQL, JWT, Nodemailer
-- Tooling: ESLint, PostCSS/Tailwind (postcss), Sass
+	**Recent highlights:**
+	- **Avatar support:** users can upload avatars (backend stores relative paths under `/uploads/avatars`).
+	- **Chat avatars:** small rounded avatars are shown left of each message bubble in the project chat.
+	- **Clear activity:** project owners/admins can clear project activity from the Project page (button in activity header).
+	- **Defensive migrations:** the server checks optional columns (avatar/avatar_url/nickname) and migrations are available under `backend/migrations`.
+	- **i18n coverage:** many UI strings were converted to the `t(key)` lookup; new keys added for confirmations and errors.
 
-## 📦 Repository Structure
-```
-backend/
-	controllers/        # auth, project, task
-	middleware/         # JWT authenticate
-	routes/             # API routes
-	db.js               # MySQL pool
-	server.js           # Express app + Socket.IO
+	**Status:** actively developed (local dev ready). See `backend/migrations` and `src/context/I18nContext.jsx` for migration and localization details.
 
-src/
-	components/         # UI components (Dashboard, Kanban, Modals, Panels)
-	context/            # AuthContext, I18nContext
-	pages/              # LoginPage
-	api.js              # Axios API layer
-	main.jsx            # App bootstrap
-```
+	**Tech Stack**
+	- Frontend: React + Vite, React Router, Axios, Socket.IO client
+	- Backend: Node.js, Express, MySQL (mysql2), JWT, Nodemailer
 
-## 🚀 Getting Started
+	**Repository Layout (high level)**
+	- `backend/` – controllers, routes, `db.js`, `server.js`, `migrations/`
+	- `src/` – React app: `components/`, `context/` (Auth + I18n), `api.js`, `main.jsx`
 
-1) Install dependencies
-```powershell
-# install all project dependencies
-npm install
+	**Getting started (dev)**
 
-# or install explicitly if needed
-npm install react react-dom react-router-dom axios socket.io-client sass
-npm install vite @vitejs/plugin-react
-npm install eslint @eslint/js eslint-plugin-react-hooks eslint-plugin-react-refresh globals
-npm install postcss autoprefixer @tailwindcss/postcss
-```
+	- Install dependencies (from repo root):
+	```powershell
+	npm install
+	```
 
-2) Configure environment in `.env`
-```dotenv
-DB_HOST=localhost
-DB_USER=<your_mysql_user>
-DB_PASSWORD=<your_mysql_password>
-DB_NAME=TaskFlow
-JWT_SECRET=<random_secret>
-PORT=5000
+	- Create `.env` in the `backend/` folder (or root depending on your setup). Important vars:
+	```dotenv
+	DB_HOST=localhost
+	DB_USER=<mysql_user>
+	DB_PASSWORD=<mysql_password>
+	DB_NAME=TaskFlow
+	JWT_SECRET=<secret>
+	PORT=5000
 
-# Email SMTP (example: Gmail App Password)
-EMAIL_HOST=smtp.gmail.com
-EMAIL_PORT=587
-EMAIL_SECURE=false
-EMAIL_USER=<your_email>
-EMAIL_PASS=<your_app_password>
-EMAIL_FROM="TaskFlow <your_email>"
-```
+	EMAIL_HOST=smtp.example.com
+	EMAIL_PORT=587
+	EMAIL_USER=<smtp_user>
+	EMAIL_PASS=<smtp_pass>
+	EMAIL_FROM="TaskFlow <noreply@example.com>"
+	```
 
-3) Start backend (default on port 5000)
-```powershell
-node .\backend\server.js
-```
+	- Apply migrations and start backend (from `backend/`):
+	```powershell
+	cd backend
+	node scripts\run-migrations.js
+	node server.js
+	```
 
-If port 5000 is busy:
-```powershell
-$env:PORT=5001
-node .\backend\server.js
-```
+	- Start frontend (root):
+	```powershell
+	npm run dev
+	```
 
-4) Start frontend (Vite dev server)
-```powershell
-npm run dev
-```
+	If the backend port is occupied, you can set a different `PORT` environment variable before starting.
 
-5) Build production bundle
+	**Migrations**
+	- Migrations are stored in `backend/migrations`. Run `node scripts/run-migrations.js` from the `backend` folder to apply them.
+	- Recent migrations add optional columns such as `avatar`, `avatar_url`, `nickname` — the server queries INFORMATION_SCHEMA to include them only when present.
+
+	**Key features & usage**
+	- Authentication: register → verify email (6-digit code) → login → token in `localStorage`.
+	- Projects & Tasks: create/update/delete from the dashboard and project pages.
+	- Chat: open a project, go to the chat panel — messages are delivered live via Socket.IO; avatars (if present) are shown left of messages.
+	- Attachments: upload files to tasks; attachments are shown inline and can be deleted.
+	- Members: manage project members and per-member permissions from the Members panel.
+	- Clear project activity: a button in the activity header clears activity (admin/owner).
+
+	**API (high level)**
+	- Base: `http://localhost:<PORT>/api`
+	- Auth: `POST /register`, `POST /verify-email`, `POST /login`, `GET /me`, `PATCH /me`, `POST /me/avatar`
+	- Projects: `GET/POST/PUT/DELETE /projects` and related routes (invitations, members, permissions)
+	- Tasks: `GET /tasks/:projectId`, `POST /tasks`, `PUT /tasks/:id`, `DELETE /tasks/:id`, attachments endpoints
+	- Chat: `GET /projects/:projectId/messages`, `POST /projects/:projectId/messages`, `PUT`/`DELETE` message
+
+	**i18n**
+	- The app uses `src/context/I18nContext.jsx` with a simple dictionary approach. Use `t('key')` in components.
+	- Both Ukrainian (`uk`) and English (`en`) dictionaries are present and were recently expanded (confirm/alert strings, permission messages, avatar/upload texts).
+
+	**Troubleshooting**
+	- If the frontend shows `ERR_CONNECTION_REFUSED`, ensure the backend is running and `PORT` matches `API_URL` in `src/api.js`.
+	- If avatars do not appear, ensure `users` table has `avatar` or `avatar_url` column (migrations), and that the `backend/uploads/avatars` folder exists and is served by Express static middleware.
+	- Multer upload size defaults were increased to allow larger avatar files (check logs for `MulterError: File too large`).
+
+	**Contributing / Notes**
+	- This repo contains local development helpers and scripts under `backend/scripts` (migration runner, etc.).
+	- When adding UI strings, prefer adding keys to `I18nContext.jsx` and use `t('...')` in components.
+
+	---
+
+	If you'd like, I can also:
+	- add placeholder initials when a user has no avatar,
+	- make avatars clickable (profile modal), or
+	- run a quick build and report any remaining i18n/runtime warnings.
+
 ```powershell
 npm run build
 ```

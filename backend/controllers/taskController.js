@@ -12,7 +12,7 @@ const createTask = async (req, res) => {
     try {
         // Check permissions: project owner OR member with admin OR explicit permission
         const proj = await q('SELECT owner_id FROM projects WHERE id = ?', [project_id]);
-        const isOwner = proj.length && proj[0].owner_id === userId;
+        const isOwner = proj.length && String(proj[0].owner_id) === String(userId);
         const rows = await q('SELECT role, permissions FROM project_members WHERE project_id = ? AND user_id = ?', [project_id, userId]);
         const rawPerms = rows.length && rows[0].permissions;
         const perms = rawPerms ? (typeof rawPerms === 'string' ? JSON.parse(rawPerms) : rawPerms) : null;
@@ -52,10 +52,38 @@ const createTask = async (req, res) => {
 // ---------------- GET TASKS BY PROJECT ----------------
 const getTasks = async (req, res) => {
     const { project_id } = req.params;
-    const query = 'SELECT * FROM tasks WHERE project_id = ? ORDER BY id ASC';
+    const tasksQuery = 'SELECT * FROM tasks WHERE project_id = ? ORDER BY id ASC';
+    const attachmentsQuery = 'SELECT id, task_id, uploaded_by, filename, original_name, mime_type, size, created_at FROM task_attachments WHERE task_id IN (?)';
     try {
-        const results = await getQuery(query, [project_id]);
-        res.json(results);
+        const tasks = await getQuery(tasksQuery, [project_id]);
+        if (!tasks.length) {
+            return res.json([]);
+        }
+
+        const taskIds = tasks.map((t) => t.id);
+        let attachments = [];
+        try {
+            attachments = await getQuery(attachmentsQuery, [taskIds]);
+        } catch (e) {
+            console.error('Get task attachments for list error:', e);
+        }
+
+        const byTask = {};
+        for (const att of attachments) {
+            const key = att.task_id;
+            if (!byTask[key]) byTask[key] = [];
+            byTask[key].push({
+                ...att,
+                url: `/uploads/tasks/${att.filename}`,
+            });
+        }
+
+        const enriched = tasks.map((t) => ({
+            ...t,
+            attachments: byTask[t.id] || [],
+        }));
+
+        res.json(enriched);
     } catch (err) {
         console.error('Get tasks error:', err);
         res.status(500).json({ message: 'Error retrieving tasks', error: err });
@@ -72,14 +100,14 @@ const updateTask = async (req, res) => {
     if (!taskRow.length) return res.status(404).json({ message: 'Task not found' });
     const projectId = taskRow[0].project_id;
     const proj = await q('SELECT owner_id FROM projects WHERE id = ?', [projectId]);
-    const isOwner = proj.length && proj[0].owner_id === userId;
+    const isOwner = proj.length && String(proj[0].owner_id) === String(userId);
     const rows = await q('SELECT role, permissions FROM project_members WHERE project_id = ? AND user_id = ?', [projectId, userId]);
     const rawPerms = rows.length && rows[0].permissions;
     const perms = rawPerms ? (typeof rawPerms === 'string' ? JSON.parse(rawPerms) : rawPerms) : null;
     const hasEdit = !!(perms && (perms.edit === true || perms.can_edit === true));
     const isAdmin = rows.length && rows[0].role === 'admin';
     const canEdit = isOwner || isAdmin || hasEdit;
-    console.log('UPDATE TASK DEBUG:', { userId, projectId, owner_id: proj[0]?.owner_id, isOwner, role: rows[0]?.role, isAdmin, perms, hasEdit, canEdit });
+    console.log('UPDATE TASK DEBUG:', { userId, projectId, owner_id: proj[0]?.owner_id, isOwner, role: rows[0]?.role, isAdmin, perms, hasEdit, canEdit, rowsLength: rows.length });
     if (!canEdit) return res.status(403).json({ message: 'Not allowed to edit tasks' });
 
     // Build dynamic SET clause only for provided fields
@@ -127,6 +155,35 @@ const updateTask = async (req, res) => {
             ...(priority !== undefined ? { priority } : {}),
             ...(labels !== undefined ? { labels: labels || [] } : {})
         });
+
+                // Log activity for this update (non-fatal)
+                try {
+                    const meta = JSON.stringify({ ...(title !== undefined ? { title } : {}), ...(description !== undefined ? { description } : {}), ...(assigned_to !== undefined ? { assigned_to } : {}), ...(due_date !== undefined ? { due_date } : {}), ...(status !== undefined ? { status } : {}), ...(priority !== undefined ? { priority } : {}), ...(labels !== undefined ? { labels } : {}) });
+                    // fetch username for nicer UI
+                    let username = null;
+                    try {
+                        const u = await q('SELECT username FROM users WHERE id = ?', [userId]);
+                        username = u[0]?.username || null;
+                    } catch {}
+                    const act = await run('INSERT INTO task_activity (task_id, user_id, `type`, metadata) VALUES (?, ?, ?, ?)', [id, userId, 'task_updated', meta]);
+                    const activity = {
+                        id: act.insertId,
+                        task_id: Number(id),
+                        project_id: Number(projectId),
+                        user_id: userId,
+                        username,
+                        type: 'task_updated',
+                        metadata: JSON.parse(meta),
+                        created_at: new Date().toISOString(),
+                    };
+                    io && io.emit('task-activity', activity);
+                } catch (e) {
+                    if (e && e.code === 'ER_NO_SUCH_TABLE') {
+                        console.warn('task_activity table missing; skipping activity log for task_updated');
+                    } else {
+                        console.error('Activity log error (task updated):', e);
+                    }
+                }
         res.json({ message: 'Task updated', id });
     } catch (err) {
         console.error('Update task error:', err);
@@ -143,7 +200,7 @@ const deleteTask = async (req, res) => {
     if (!taskRow.length) return res.status(404).json({ message: 'Task not found' });
     const projectId = taskRow[0].project_id;
     const proj = await q('SELECT owner_id FROM projects WHERE id = ?', [projectId]);
-    const isOwner = proj.length && proj[0].owner_id === userId;
+    const isOwner = proj.length && String(proj[0].owner_id) === String(userId);
     const rows = await q('SELECT role, permissions FROM project_members WHERE project_id = ? AND user_id = ?', [projectId, userId]);
     const rawPerms = rows.length && rows[0].permissions;
     const perms = rawPerms ? (typeof rawPerms === 'string' ? JSON.parse(rawPerms) : rawPerms) : null;

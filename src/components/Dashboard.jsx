@@ -128,11 +128,11 @@ export default function Dashboard() {
   }
 
   function handleDelete(id) {
-    if (window.confirm("Ви дійсно хочете видалити проект?")) {
+    if (window.confirm(t('confirmDeleteProject'))) {
       const token = localStorage.getItem("token");
       deleteProject(id, token)
         .then(loadProjects)
-        .catch(() => alert("Помилка видалення проекту!"));
+        .catch(() => alert(t('deleteProjectFailed')));
     }
   }
 
@@ -145,7 +145,7 @@ export default function Dashboard() {
           setModalOpen(false);
           loadProjects();
         })
-        .catch(() => alert("Помилка редагування!"));
+        .catch(() => alert(t('editProjectFailed')));
     } else {
       // Створення
       createProject(data.name, data.description, token)
@@ -153,7 +153,7 @@ export default function Dashboard() {
           setModalOpen(false);
           loadProjects();
         })
-        .catch(() => alert("Помилка створення!"));
+        .catch(() => alert(t('createProjectFailed')));
     }
   }
 

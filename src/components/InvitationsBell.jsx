@@ -1,12 +1,14 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useAuth } from "../context/AuthContext";
 import { getMyInvitations, acceptInvitation, declineInvitation } from "../api";
 import { useI18n } from "../context/I18nContext.jsx";
+import ProjectInviteCard from "./ProjectInviteCard.jsx";
 
 export default function InvitationsBell({ isOpen, onToggle }) {
   const { token, user, socket } = useAuth();
   const [invites, setInvites] = useState([]);
   const { t } = useI18n();
+  const rootRef = useRef(null);
 
   async function load() {
     if (!token) return;
@@ -19,6 +21,19 @@ export default function InvitationsBell({ isOpen, onToggle }) {
   useEffect(() => {
     load();
   }, [token]);
+
+  // close when clicking outside
+  useEffect(() => {
+    function onDocClick(e) {
+      if (!isOpen) return;
+      if (!rootRef.current) return;
+      if (!rootRef.current.contains(e.target)) {
+        onToggle();
+      }
+    }
+    document.addEventListener('click', onDocClick);
+    return () => document.removeEventListener('click', onDocClick);
+  }, [isOpen, onToggle]);
 
   useEffect(() => {
     if (!socket) return;
@@ -46,7 +61,7 @@ export default function InvitationsBell({ isOpen, onToggle }) {
   const count = invites.length;
 
   return (
-    <div style={{ position: "relative" }}>
+    <div style={{ position: "relative" }} ref={rootRef}>
       <button 
         title={t('invitationsTitle')} 
         onClick={onToggle}
@@ -98,12 +113,12 @@ export default function InvitationsBell({ isOpen, onToggle }) {
             <div style={{ color: "#64748b" }}>{t('noInvitations')}</div>
           ) : (
             invites.map((inv) => (
-              <div key={inv.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, padding: "6px 0" }}>
-                <div>
-                  <div style={{ fontWeight: 600 }}>{t('projectLabel')}: {inv.project_name || inv.project_id}</div>
-                  <div style={{ fontSize: 12, color: "#64748b" }}>{t('invitationNumber')}{inv.id}</div>
-                </div>
-                <div style={{ display: "flex", gap: 6 }}>
+              <div key={inv.id} style={{ display: "flex", flexDirection: 'column', gap: 8, padding: "6px 0" }}>
+                <ProjectInviteCard
+                  data={{ sender_id: inv.sender_id, project_id: inv.project_id, project_name: inv.project_name, invitation_id: inv.id }}
+                  createdAt={inv.created_at}
+                />
+                <div style={{ display: "flex", gap: 6, alignSelf: 'flex-end' }}>
                   <button onClick={() => onAccept(inv.id)} title={t('accept')}>✅</button>
                   <button onClick={() => onDecline(inv.id)} title={t('decline')}>❌</button>
                 </div>

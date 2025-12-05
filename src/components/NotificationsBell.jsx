@@ -1,12 +1,15 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useAuth } from "../context/AuthContext";
 import { getNotifications, markNotificationAsRead, markAllNotificationsAsRead, deleteNotification } from "../api";
 import { useI18n } from "../context/I18nContext.jsx";
+import NotificationCard from "./NotificationCard.jsx";
+import ProjectInviteCard from "./ProjectInviteCard.jsx";
 
 export default function NotificationsBell({ isOpen, onToggle }) {
   const { token, socket } = useAuth();
   const [notifications, setNotifications] = useState([]);
   const { t } = useI18n();
+  const rootRef = useRef(null);
 
   async function load() {
     if (!token) return;
@@ -21,6 +24,19 @@ export default function NotificationsBell({ isOpen, onToggle }) {
   useEffect(() => {
     load();
   }, [token]);
+
+  // close when clicking outside
+  useEffect(() => {
+    function onDocClick(e) {
+      if (!isOpen) return;
+      if (!rootRef.current) return;
+      if (!rootRef.current.contains(e.target)) {
+        onToggle();
+      }
+    }
+    document.addEventListener('click', onDocClick);
+    return () => document.removeEventListener('click', onDocClick);
+  }, [isOpen, onToggle]);
 
   useEffect(() => {
     if (!socket) return;
@@ -64,7 +80,7 @@ export default function NotificationsBell({ isOpen, onToggle }) {
   const unreadCount = notifications.filter((n) => !n.is_read).length;
 
   return (
-    <div style={{ position: "relative" }}>
+    <div style={{ position: "relative" }} ref={rootRef}>
       <button
         title={t('notificationsTitle')}
         onClick={onToggle}
@@ -157,65 +173,51 @@ export default function NotificationsBell({ isOpen, onToggle }) {
               {t('noNotifications')}
             </div>
           ) : (
-            notifications.map((notif) => (
-              <div
-                key={notif.id}
-                style={{
-                  padding: "10px",
-                  marginBottom: "8px",
-                  background: notif.is_read ? "#f8fafc" : "#eff6ff",
-                  border: `1px solid ${notif.is_read ? "#e2e8f0" : "#bfdbfe"}`,
-                  borderRadius: "6px",
-                  fontSize: "14px",
-                }}
-              >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 600, marginBottom: "4px" }}>
-                      {notif.type}
-                    </div>
-                    <div style={{ color: "#475569", fontSize: "13px" }}>
-                      {typeof notif.payload === "string"
-                        ? notif.payload
-                        : JSON.stringify(notif.payload)}
-                    </div>
-                    <div style={{ fontSize: "11px", color: "#94a3b8", marginTop: "6px" }}>
-                      {new Date(notif.created_at).toLocaleString("uk-UA")}
-                    </div>
-                  </div>
-                  <div style={{ display: "flex", gap: "6px", marginLeft: "8px" }}>
+            notifications.map((notif) => {
+              // Parse payload if it's a JSON string
+              let parsedPayload = notif.payload;
+              if (typeof parsedPayload === 'string') {
+                try {
+                  parsedPayload = JSON.parse(parsedPayload);
+                } catch {
+                  // leave as string if not valid JSON
+                }
+              }
+
+              const isProjectInvite = notif.type === 'project_invite' && parsedPayload && typeof parsedPayload === 'object';
+
+              return (
+                <div key={notif.id} style={{ marginBottom: 8 }}>
+                  {isProjectInvite ? (
+                    <ProjectInviteCard data={parsedPayload} createdAt={notif.created_at} />
+                  ) : (
+                    <NotificationCard
+                      title={notif.type}
+                      body={typeof parsedPayload === 'string' ? parsedPayload : JSON.stringify(parsedPayload)}
+                      createdAt={notif.created_at}
+                    />
+                  )}
+                  <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', marginTop: 6 }}>
                     {!notif.is_read && (
                       <button
                         onClick={() => onMarkAsRead(notif.id)}
-                        title="Позначити прочитаним"
-                        style={{
-                          fontSize: "16px",
-                          padding: "4px",
-                          background: "transparent",
-                          border: "none",
-                          cursor: "pointer",
-                        }}
+                        title={t('markAsRead') || 'Позначити прочитаним'}
+                        style={{ fontSize: 14, padding: '4px 8px', background: '#e2e8f0', border: 'none', borderRadius: 6, cursor: 'pointer' }}
                       >
                         ✓
                       </button>
                     )}
                     <button
                       onClick={() => onDelete(notif.id)}
-                      title="Видалити"
-                      style={{
-                        fontSize: "16px",
-                        padding: "4px",
-                        background: "transparent",
-                        border: "none",
-                        cursor: "pointer",
-                      }}
+                      title={t('delete')}
+                      style={{ fontSize: 14, padding: '4px 8px', background: '#fee2e2', border: 'none', borderRadius: 6, cursor: 'pointer' }}
                     >
                       🗑️
                     </button>
                   </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       )}

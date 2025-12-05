@@ -34,9 +34,11 @@ export default function MembersPanel({ projectId }) {
       await kickProjectMember(projectId, memberId, token);
       setMembers((prev) => prev.filter((m) => m.user_id !== memberId));
     } catch (e) {
-      alert(e?.response?.data?.message || e.message || "Не вдалося видалити");
+      alert(e?.response?.data?.message || e.message || t('removeMemberFailed'));
     }
   }
+
+
 
   async function onToggle(memberId, key) {
     if (!editingId || editingId !== memberId) {
@@ -147,17 +149,17 @@ export default function MembersPanel({ projectId }) {
                         }}>✕</button>
                       </>
                     ) : (
-                      <button onClick={() => onKick(m.user_id)} style={{ 
-                        color: "#fff",
-                        background: "#dc2626",
-                        padding: "8px 16px",
-                        border: "none",
-                        borderRadius: "6px",
-                        fontSize: "13px",
-                        fontWeight: 600,
-                        cursor: "pointer",
-                        transition: "all 0.3s"
-                      }}>🗑️</button>
+                        <button onClick={() => onKick(m.user_id)} style={{ 
+                          color: "#fff",
+                          background: "#dc2626",
+                          padding: "8px 16px",
+                          border: "none",
+                          borderRadius: "6px",
+                          fontSize: "13px",
+                          fontWeight: 600,
+                          cursor: "pointer",
+                          transition: "all 0.3s"
+                        }}>{t('kick')} 🗑️</button>
                     )}
                   </div>
                 </div>

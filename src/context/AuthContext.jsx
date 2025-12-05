@@ -48,6 +48,18 @@ export const AuthProvider = ({ children }) => {
     })();
   }, [token]);
 
+  // expose a refreshUser helper to update current user data after profile changes
+  const refreshUser = async () => {
+    if (!token) return;
+    try {
+      const u = await getMe(token);
+      setUser(u);
+      return u;
+    } catch (e) {
+      return null;
+    }
+  };
+
   const login = (newToken, userData) => {
     localStorage.setItem("token", newToken);
     setToken(newToken);
@@ -98,7 +110,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, socket }}>
+    <AuthContext.Provider value={{ user, token, login, logout, socket, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

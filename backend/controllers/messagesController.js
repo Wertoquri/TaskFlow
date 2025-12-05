@@ -3,7 +3,11 @@ const { getQuery, run } = require('../db');
 async function listMessages(req, res) {
   const projectId = Number(req.params.id);
   try {
-    const rows = await getQuery('SELECT m.*, u.username FROM messages m JOIN users u ON u.id = m.user_id WHERE m.project_id = ? ORDER BY m.created_at ASC', [projectId]);
+    // Check whether users table has avatar/avatar_url columns to include them defensively
+    const cols = await getQuery("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME IN ('avatar','avatar_url')");
+    const extra = (cols || []).map(c => `u.\`${c.COLUMN_NAME}\``).join(', ');
+    const sql = `SELECT m.*, u.username${extra ? ', ' + extra : ''} FROM messages m JOIN users u ON u.id = m.user_id WHERE m.project_id = ? ORDER BY m.created_at ASC`;
+    const rows = await getQuery(sql, [projectId]);
     res.json(rows);
   } catch (e) { console.error('listMessages', e); res.status(500).json({ message: 'Server error' }); }
 }
@@ -15,10 +19,15 @@ async function postMessage(req, res) {
   if (!content || !content.trim()) return res.status(400).json({ message: 'Empty message' });
   try {
     const result = await run('INSERT INTO messages (project_id, user_id, content) VALUES (?, ?, ?)', [projectId, userId, content]);
-    // Get username for response and socket
-    const userRows = await getQuery('SELECT username FROM users WHERE id = ?', [userId]);
-    const username = userRows.length ? userRows[0].username : `User #${userId}`;
-    const message = { id: result.insertId, project_id: projectId, user_id: userId, content, username, created_at: new Date().toISOString() };
+    // Get username and (optionally) avatar fields for response and socket
+    const cols = await getQuery("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME IN ('avatar','avatar_url')");
+    const extra = (cols || []).map(c => `\`${c.COLUMN_NAME}\``).join(', ');
+    const sel = `SELECT username${extra ? ', ' + extra : ''} FROM users WHERE id = ?`;
+    const userRows = await getQuery(sel, [userId]);
+    const u = userRows.length ? userRows[0] : { username: `User #${userId}` };
+    const message = { id: result.insertId, project_id: projectId, user_id: userId, content, username: u.username, created_at: new Date().toISOString() };
+    if (u.avatar) message.avatar = u.avatar;
+    if (u.avatar_url) message.avatar_url = u.avatar_url;
     const io = req.app.get('io');
     io && io.to(`project:${projectId}`).emit('chat:message', message);
     res.status(201).json(message);

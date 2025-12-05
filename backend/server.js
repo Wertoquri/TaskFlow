@@ -7,6 +7,7 @@ const cors = require('cors');
 const mysql = require('mysql2/promise');
 const http = require('http');
 const { Server } = require('socket.io');
+const multer = require('multer');
 
 // Завантажуємо .env з кореня проекту
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
@@ -21,6 +22,24 @@ app.use(cors({
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
+// Статика для завантажених файлів задач
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Налаштування multer для вкладень задач
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, path.join(__dirname, 'uploads', 'tasks'));
+    },
+    filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        const safeName = file.originalname.replace(/[^a-zA-Z0-9_.-]/g, '_');
+        cb(null, uniqueSuffix + '-' + safeName);
+    }
+});
+
+const upload = multer({ storage });
+app.set('uploadTasks', upload);
 
 // Підключаємо роутер автентифікації (реєстрація, логін, верифікація email)
 const authRoutes = require('./routes/authRoutes');
@@ -39,15 +58,40 @@ app.use('/api/notifications', notificationsRoutes);
 
 // Me endpoint (requires auth)
 const authenticate = require('./middleware/authenticate');
-const { getQuery, run } = require('./db');
+const { getQuery, run, pool } = require('./db');
 app.get('/api/me', authenticate, async (req, res) => {
     try {
-        const rows = await getQuery('SELECT id, username, email FROM users WHERE id = ?', [req.user.id]);
+        // Defensive select: some deployments may not have `avatar` or `avatar_url` columns.
+        const cols = await getQuery(
+          `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'users'`,
+          [process.env.DB_NAME]
+        );
+        const colSet = new Set((cols || []).map((c) => c.COLUMN_NAME));
+        const fields = ['id', 'username', 'email'];
+        if (colSet.has('nickname')) fields.push('nickname');
+        if (colSet.has('avatar')) fields.push('avatar');
+        if (colSet.has('avatar_url')) fields.push('avatar_url');
+        const q = `SELECT ${fields.join(', ')} FROM users WHERE id = ?`;
+        console.log('[debug] /api/me selecting fields:', fields.join(', '));
+        const rows = await getQuery(q, [req.user.id]);
         if (!rows || rows.length === 0) return res.status(404).json({ message: 'User not found' });
         res.json(rows[0]);
     } catch (err) {
-        console.error('Get me error:', err);
+                console.error('Get me error:', err && err.stack ? err.stack : err);
         res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Health endpoint to verify DB connectivity and basic server status
+app.get('/api/health', async (req, res) => {
+    try {
+        // Try a lightweight query via pool
+        if (!pool) return res.status(500).json({ ok: false, message: 'DB pool not initialized' });
+        const [rows] = await pool.query('SELECT 1 AS ok');
+        res.json({ ok: true, db: rows && rows.length ? rows[0].ok : null });
+    } catch (err) {
+        console.error('Health check error:', err && err.stack ? err.stack : err);
+        res.status(500).json({ ok: false, message: 'DB error', error: String(err) });
     }
 });
 

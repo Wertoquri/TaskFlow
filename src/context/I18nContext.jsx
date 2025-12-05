@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
-const I18nContext = createContext({ language: 'uk', setLanguage: () => {}, theme: 'light', setTheme: () => {}, t: (k) => k });
+const I18nContext = createContext({ language: 'uk', setLanguage: () => {}, theme: 'light', setTheme: () => {}, t: (k, params) => k });
 
 const DICT = {
   uk: {
@@ -34,6 +34,12 @@ const DICT = {
     dashboardTitle: '📅 TaskFlow Дашборд',
     dashboardSubtitle: 'Керуйте своїми проектами та завданнями',
     createProject: '➕ Створити проект',
+    projectActivity: 'Активність проєкту',
+    noActivityYet: 'Активності поки немає',
+    loadMore: 'Завантажити ще',
+    clearActivity: 'Очистити',
+    clearActivityConfirm: 'Ви впевнені, що хочете очистити активність проєкту? Це дію неможливо скасувати.',
+    activityClearedSuccess: 'Активність проєкту очищена',
     // Dashboard filters
     filterStatusAll: '📊 Статус: всі',
     statusPending: '⏳ Очікує',
@@ -103,11 +109,27 @@ const DICT = {
     add: 'Додати',
     confirmDeleteTask: 'Видалити завдання?',
     promptTitleRequired: 'Введіть назву',
+    promptNewTaskTitle: 'Нова назва завдання:',
+    confirmDeleteProject: 'Ви дійсно хочете видалити проект?',
+    deleteProjectFailed: 'Помилка видалення проекту',
+    editProjectFailed: 'Помилка редагування проекту',
+    createProjectFailed: 'Помилка створення проекту',
+    deleteAccountFailed: 'Не вдалося видалити акаунт',
+    activityClearFailed: 'Не вдалося очистити активність',
     updateTaskFailed: 'Не вдалося оновити завдання: ',
     errorGeneric: 'Помилка',
+    // Activity details (unused after removal but kept for reuse)
+    details: 'Детальніше',
+    closeDetails: 'Закрити деталі',
+    noDetails: 'Немає додаткових деталей',
+    // Field labels
+    fieldStatus: 'Статус',
+    fieldPriority: 'Пріоритет',
+    fieldTitle: 'Назва',
+    fieldFilename: 'Файл',
+    fieldAssignedTo: 'Призначено',
     // Tasks modal
     tasksProjectTitle: '📋 Завдання проєкту:',
-    close: 'Закрити',
     loadingTasks: '⏳ Завантаження завдань...',
     loadTasksError: 'Не вдалося завантажити завдання',
     noTasksYet: 'Завдань поки немає',
@@ -168,11 +190,15 @@ const DICT = {
     rightsSaved: '✅ Права збережено!',
     rightsChangeFailed: 'Не вдалося змінити права',
     confirmKickMember: 'Видалити учасника з проєкту?',
+    kick: 'Видалити',
+    confirmClearPermissions: 'Ви впевнені, що хочете скинути індивідуальні права цього учасника?',
+    permissionsCleared: 'Права користувача скинуто',
     permCreate: 'Створення',
     permEdit: 'Редагування',
     permDelete: 'Видалення',
     permAssign: 'Призначення',
     permComment: 'Коментарі',
+    removeMemberFailed: 'Не вдалося видалити учасника',
     // Kanban
     kanbanPending: 'Pending',
     kanbanInProgress: 'In Progress',
@@ -186,10 +212,25 @@ const DICT = {
     labelAddError: 'Помилка додавання мітки',
     labelEdit: '✏️ редагувати',
     labelInputPlaceholder: '+ мітка',
+    addAttachment: 'Додати файл',
+    uploading: 'Завантаження...',
+    addAvatar: 'Додати аватар',
+    uploadAvatar: 'Завантажити аватар',
+    uploadingAvatar: 'Завантаження аватара...',
+    uploadAvatarSuccess: 'Аватар оновлено',
+    uploadAvatarError: 'Не вдалося завантажити аватар',
+    deleteAttachment: 'Видалити файл',
+    attachmentUploaded: 'Файл завантажено',
+    attachmentUploadError: 'Помилка завантаження файлу',
+    attachmentDeleted: 'Файл успішно видалено',
+    attachmentDeleteError: 'Не вдалося видалити файл. Спробуйте ще раз.',
+    showAllFiles: 'Показати всі файли',
+    showLess: 'Менше',
     // Profile menu
     profile: 'Профіль',
     loading: 'Завантаження...',
     nameLabel: "Ім'я:",
+    nicknameLabel: 'Нікнейм:',
     rightsReserved: 'Всі права захищені',
     // Project chat
     projectChatTitle: '💬 Чат проєкту',
@@ -218,6 +259,16 @@ const DICT = {
     createProjectBtn: '🚀 Створити проект',
     projectNameRequired: "Назва проекту обов'язкова!",
     projectNameShort: 'Назва має бути не менше 3 символів',
+    // Activity
+    'activity.attachment_added': 'Файл «{filename}» додано',
+    'activity.attachment_added_generic': 'Додано файл',
+    'activity.attachment_deleted': 'Файл «{filename}» видалено',
+    'activity.attachment_deleted_generic': 'Файл видалено',
+    'activity.task_updated': 'Оновлено завдання',
+    'activity.task_updated_changes': 'Оновлено: {changes}',
+    'activity.task_created': 'Створено завдання',
+    'activity.task_assigned': 'Завдання призначено користувачу {user}',
+    'activity.task_deleted': 'Завдання видалено',
   },
   en: {
     settings: 'Settings',
@@ -248,6 +299,12 @@ const DICT = {
     dashboardTitle: '📅 TaskFlow Dashboard',
     dashboardSubtitle: 'Manage your projects and tasks',
     createProject: '➕ Create project',
+    projectActivity: 'Project activity',
+    noActivityYet: 'No activity yet',
+    loadMore: 'Load more',
+    clearActivity: 'Clear',
+    clearActivityConfirm: 'Are you sure you want to clear project activity? This cannot be undone.',
+    activityClearedSuccess: 'Project activity cleared',
     // Dashboard filters
     filterStatusAll: '📊 Status: all',
     statusPending: '⏳ Pending',
@@ -317,11 +374,27 @@ const DICT = {
     add: 'Add',
     confirmDeleteTask: 'Delete task?',
     promptTitleRequired: 'Enter a title',
+    promptNewTaskTitle: 'New task title:',
+    confirmDeleteProject: 'Are you sure you want to delete the project?',
+    deleteProjectFailed: 'Failed to delete project',
+    editProjectFailed: 'Failed to edit project',
+    createProjectFailed: 'Failed to create project',
+    deleteAccountFailed: 'Failed to delete account',
+    activityClearFailed: 'Failed to clear activity',
     updateTaskFailed: 'Failed to update task: ',
     errorGeneric: 'Error',
+    // Activity details (unused after removal but kept for reuse)
+    details: 'Details',
+    closeDetails: 'Close details',
+    noDetails: 'No additional details',
+    // Field labels
+    fieldStatus: 'Status',
+    fieldPriority: 'Priority',
+    fieldTitle: 'Title',
+    fieldFilename: 'Filename',
+    fieldAssignedTo: 'Assigned To',
     // Tasks modal
     tasksProjectTitle: '📋 Project tasks:',
-    close: 'Close',
     loadingTasks: '⏳ Loading tasks...',
     loadTasksError: 'Failed to load tasks',
     noTasksYet: 'No tasks yet',
@@ -382,11 +455,15 @@ const DICT = {
     rightsSaved: '✅ Rights saved!',
     rightsChangeFailed: 'Failed to change rights',
     confirmKickMember: 'Remove member from project?',
+    kick: 'Remove',
+    confirmClearPermissions: 'Are you sure you want to clear this member\'s custom permissions?',
+    permissionsCleared: 'Member permissions cleared',
     permCreate: 'Create',
     permEdit: 'Edit',
     permDelete: 'Delete',
     permAssign: 'Assign',
     permComment: 'Comments',
+    removeMemberFailed: 'Failed to remove member',
     // Kanban
     kanbanPending: 'Pending',
     kanbanInProgress: 'In Progress',
@@ -400,10 +477,25 @@ const DICT = {
     labelAddError: 'Label add error',
     labelEdit: '✏️ edit',
     labelInputPlaceholder: '+ label',
+    addAttachment: 'Add file',
+    uploading: 'Uploading...',
+    addAvatar: 'Add avatar',
+    uploadAvatar: 'Upload avatar',
+    uploadingAvatar: 'Uploading avatar...',
+    uploadAvatarSuccess: 'Avatar updated',
+    uploadAvatarError: 'Failed to upload avatar',
+    deleteAttachment: 'Delete file',
+    attachmentUploaded: 'Attachment uploaded',
+    attachmentUploadError: 'Attachment upload error',
+    attachmentDeleted: 'File deleted successfully',
+    attachmentDeleteError: 'Failed to delete file. Please try again.',
+    showAllFiles: 'Show all files',
+    showLess: 'Show less',
     // Profile menu
     profile: 'Profile',
     loading: 'Loading...',
     nameLabel: 'Name:',
+    nicknameLabel: 'Nickname:',
     rightsReserved: 'All rights reserved',
     // Project chat
     projectChatTitle: '💬 Project chat',
@@ -432,6 +524,16 @@ const DICT = {
     createProjectBtn: '🚀 Create project',
     projectNameRequired: 'Project name is required!',
     projectNameShort: 'Name must be at least 3 characters',
+    // Activity
+    'activity.attachment_added': 'File "{filename}" added',
+    'activity.attachment_added_generic': 'File added',
+    'activity.attachment_deleted': 'File "{filename}" deleted',
+    'activity.attachment_deleted_generic': 'File deleted',
+    'activity.task_updated': 'Task updated',
+    'activity.task_updated_changes': 'Updated: {changes}',
+    'activity.task_created': 'Task created',
+    'activity.task_assigned': 'Task assigned to {user}',
+    'activity.task_deleted': 'Task deleted',
   }
 };
 
@@ -456,7 +558,15 @@ export function I18nProvider({ children }) {
 
   const t = useMemo(() => {
     const dict = DICT[language] || DICT.uk;
-    return (key) => dict[key] ?? key;
+    return (key, params = undefined) => {
+      let val = dict[key] ?? key;
+      if (params && typeof val === 'string') {
+        for (const [p, v] of Object.entries(params)) {
+          val = val.replace(new RegExp(`\\{${p}\\}`, 'g'), String(v));
+        }
+      }
+      return val;
+    };
   }, [language]);
 
   const value = useMemo(() => ({ language, setLanguage, theme, setTheme, t }), [language, theme]);

@@ -265,3 +265,20 @@ const deleteAccount = async (req, res) => {
 };
 
 module.exports = { register, login, verifyEmail, resendCode, deleteAccount };
+// Add profile update handler for editable fields (nickname)
+async function updateProfile(req, res) {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+    const { nickname } = req.body;
+    // allow clearing nickname by sending null or empty string
+    const nickVal = nickname && nickname.trim() ? nickname.trim() : null;
+    await pool.query('UPDATE users SET nickname = ? WHERE id = ?', [nickVal, userId]);
+    return res.json({ ok: true, nickname: nickVal });
+  } catch (err) {
+    console.error('Update profile error:', err && err.stack ? err.stack : err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+}
+
+module.exports.updateProfile = updateProfile;

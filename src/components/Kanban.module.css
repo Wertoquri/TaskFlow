@@ -208,3 +208,142 @@
   background: #dbeafe;
   color: #1e40af;
 }
+
+/* Attachments UI */
+.attachmentsRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.5rem 0;
+}
+
+.attachmentButton {
+  font-size: 0.85rem;
+  color: #1e40af;
+  font-weight: 600;
+  background: #eef2ff;
+  border: 1px solid #c7d2fe;
+  border-radius: 0.5rem;
+  padding: 0.375rem 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.attachmentButton:hover {
+  background: #e0e7ff;
+  border-color: #818cf8;
+}
+
+.attachmentsList {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  flex-wrap: wrap;
+}
+
+.attachmentItem {
+  font-size: 0.85rem;
+  color: #0f172a;
+  background: #ffffff;
+  border: 1px solid #e6eefc;
+  border-radius: 9999px;
+  padding: 0.25rem 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 1px 2px rgba(15,23,42,0.03);
+}
+
+.attachmentItem a {
+  color: inherit;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.attachmentItem:hover {
+  background: linear-gradient(90deg, #f8fafc, #eef2ff);
+  border-color: #dbeafe;
+  transform: translateY(-1px);
+}
+
+.moreAttachments {
+  font-size: 0.85rem;
+  color: #1f2937;
+  background: #eef2ff;
+  border: 1px solid #c7d2fe;
+  padding: 0.25rem 0.5rem;
+  border-radius: 9999px;
+  cursor: pointer;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.12s ease, background 0.12s ease, box-shadow 0.12s ease;
+}
+
+.moreAttachments:hover {
+  transform: translateY(-2px);
+  background: linear-gradient(90deg, #eef2ff, #e0e7ff);
+  box-shadow: 0 6px 16px rgba(99,102,241,0.08);
+}
+
+.moreAttachments:focus {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(99,102,241,0.12);
+}
+
+.attachmentDelete {
+  margin-left: 0.25rem;
+  background: linear-gradient(180deg, #fff7f7 0%, #fff1f2 100%);
+  border: 1px solid #fecaca;
+  color: #7f1d1d;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0.25rem 0.6rem;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  min-height: 36px;
+  font-size: 1rem;
+  transition: transform 0.14s cubic-bezier(.2,.9,.2,1), box-shadow 0.14s ease, background 0.14s;
+  box-shadow: 0 4px 10px rgba(239,68,68,0.08);
+  position: relative;
+  overflow: hidden;
+}
+
+.attachmentDelete:hover {
+  background: linear-gradient(180deg, #fff1f0 0%, #ffe4e6 100%);
+  color: #991b1b;
+  transform: translateY(-3px) scale(1.03);
+  box-shadow: 0 8px 28px rgba(239,68,68,0.14);
+}
+
+.attachmentDelete:focus {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(254, 202, 202, 0.18);
+}
+
+/* ripple micro-interaction */
+.attachmentDelete::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  background: rgba(127,29,29,0.12);
+  border-radius: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.45s cubic-bezier(.2,.8,.2,1), opacity 0.45s ease;
+}
+.attachmentDelete:active::after {
+  transform: translate(-50%, -50%) scale(10);
+  opacity: 1;
+  transition: transform 0s, opacity 0.45s ease;
+}

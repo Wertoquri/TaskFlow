@@ -4,3 +4,4 @@ ALTER TABLE users
   ADD COLUMN resend_reset_at DATETIME NULL,
   ADD COLUMN verify_attempts INT DEFAULT 0,
   ADD COLUMN verify_reset_at DATETIME NULL;
+

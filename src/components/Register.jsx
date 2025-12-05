@@ -86,9 +86,9 @@ const Register = () => {
     if (/[0-9]/.test(password)) strength++;
     if (/[^A-Za-z0-9]/.test(password)) strength++;
     
-    if (strength <= 2) return { label: t('weak'), color: '#ef4444' };
-    if (strength === 3) return { label: t('medium'), color: '#f59e0b' };
-    return { label: t('strong'), color: '#10b981' };
+    if (strength <= 2) return { label: t('weak'), color: '#ef4444', bars: 1 };
+    if (strength === 3 || strength === 4) return { label: t('medium'), color: '#f59e0b', bars: 2 };
+    return { label: t('strong'), color: '#10b981', bars: 4 };
   };
 
   const strength = passwordStrength();
@@ -145,7 +145,7 @@ const Register = () => {
                     <div key={i} style={{
                       flex: 1,
                       height: '4px',
-                      background: i <= (strength.label === 'Слабкий' ? 1 : strength.label === 'Середній' ? 2 : 3) ? strength.color : '#e2e8f0',
+                      background: i <= strength.bars ? strength.color : '#e2e8f0',
                       borderRadius: '2px'
                     }} />
                   ))}
