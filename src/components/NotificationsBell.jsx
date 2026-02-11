@@ -1,12 +1,14 @@
 import React, { useEffect, useState, useRef } from "react";
-import { useAuth } from "../context/AuthContext";
+import { useAuthApi } from "../context/authApi";
 import { getNotifications, markNotificationAsRead, markAllNotificationsAsRead, deleteNotification } from "../api";
 import { useI18n } from "../context/I18nContext.jsx";
 import NotificationCard from "./NotificationCard.jsx";
 import ProjectInviteCard from "./ProjectInviteCard.jsx";
 
 export default function NotificationsBell({ isOpen, onToggle }) {
-  const { token, socket } = useAuth();
+  const auth = useAuthApi();
+  const token = auth.token ?? (typeof auth.getToken === 'function' ? auth.getToken() : undefined);
+  const socket = auth.socket ?? (typeof auth.getSocket === 'function' ? auth.getSocket() : undefined);
   const [notifications, setNotifications] = useState([]);
   const { t } = useI18n();
   const rootRef = useRef(null);

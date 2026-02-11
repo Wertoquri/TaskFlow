@@ -1,5 +1,6 @@
 export function ProjectSocketJoin({ projectId }) {
-  const { socket } = useAuth();
+  const auth = useAuthApi();
+  const socket = auth.socket ?? (typeof auth.getSocket === 'function' ? auth.getSocket() : undefined);
   useEffect(() => {
     if (!socket || !projectId) return;
     socket.emit("join-project", projectId);
@@ -10,7 +11,7 @@ export function ProjectSocketJoin({ projectId }) {
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext.jsx";
+import { useAuthApi } from "../context/authApi";
 import MembersPanel from "./MembersPanel.jsx";
 import InviteUserPanel from "./InviteUserPanel.jsx";
 import ProjectChat from "./ProjectChat.jsx";
@@ -21,7 +22,9 @@ import io from "socket.io-client";
 const ProjectPage = () => {
   const { id } = useParams(); // project id
   const navigate = useNavigate();
-  const { token, user } = useAuth();
+  const auth = useAuthApi();
+  const token = auth.token ?? (typeof auth.getToken === 'function' ? auth.getToken() : undefined);
+  const user = typeof auth.getUser === 'function' ? auth.getUser() : auth.user;
   const { t } = useI18n();
 
   const [tasks, setTasks] = useState([]);

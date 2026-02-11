@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { useAuth } from "../context/AuthContext";
 import { getProjectMembers, kickProjectMember, updateMemberPermissions } from "../api";
 import { useI18n } from "../context/I18nContext.jsx";
 
 export default function MembersPanel({ projectId }) {
-  const { token, user } = useAuth();
+  const token = localStorage.getItem('token');
+  let user = null;
+  try { user = JSON.parse(localStorage.getItem('user') || 'null'); } catch { user = null; }
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");

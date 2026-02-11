@@ -1,11 +1,15 @@
 import React, { useState, useRef, useEffect } from "react";
-import { useAuth } from "../context/AuthContext";
+import { useAuthApi } from "../context/authApi";
 import { uploadAvatar, API_URL as API_BASE_URL } from "../api";
 import styles from "./ProfileMenu.module.css";
 import { useI18n } from "../context/I18nContext.jsx";
 
 export default function ProfileMenu({ isOpen, onToggle }) {
-  const { user, logout, refreshUser, token } = useAuth();
+  const auth = useAuthApi();
+  const user = typeof auth.getUser === 'function' ? auth.getUser() : auth.user;
+  const logout = auth.logout ?? (() => {});
+  const refreshUser = auth.refreshUser ?? (typeof auth.refreshUser === 'function' ? auth.refreshUser : undefined);
+  const token = auth.token ?? (typeof auth.getToken === 'function' ? auth.getToken() : undefined);
   const ref = useRef(null);
   const { t } = useI18n();
   const [uploading, setUploading] = useState(false);

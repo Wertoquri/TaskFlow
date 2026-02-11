@@ -1,11 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useI18n } from '../context/I18nContext.jsx';
-import { useAuth } from '../context/AuthContext.jsx';
+import { useAuthApi } from '../context/authApi';
 import { deleteMyAccount } from '../api.js';
 
 export default function SettingsMenu({ isOpen, onToggle }) {
   const { t, language, setLanguage } = useI18n();
-  const { logout } = useAuth();
+  const auth = useAuthApi();
+  const logout = auth.logout ?? (() => {});
   const ref = useRef(null);
   const [confirming, setConfirming] = useState(false);
   const [loading, setLoading] = useState(false);

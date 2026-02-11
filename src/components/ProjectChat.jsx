@@ -1,10 +1,13 @@
 import React, { useEffect, useState, useRef } from "react";
-import { useAuth } from "../context/AuthContext";
+import { useAuthApi } from "../context/authApi";
 import { getProjectMessages, sendProjectMessage, updateProjectMessage, deleteProjectMessage, API_URL } from "../api";
 import { useI18n } from "../context/I18nContext.jsx";
 
 export default function ProjectChat({ projectId }) {
-  const { token, user, socket } = useAuth();
+  const auth = useAuthApi();
+  const token = auth.token ?? (typeof auth.getToken === 'function' ? auth.getToken() : undefined);
+  const user = typeof auth.getUser === 'function' ? auth.getUser() : auth.user;
+  const socket = auth.socket ?? (typeof auth.getSocket === 'function' ? auth.getSocket() : undefined);
   const { t } = useI18n();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");

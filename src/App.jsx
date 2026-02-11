@@ -1,6 +1,7 @@
 import React from 'react';
 import { Route, Routes, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './context/AuthContext';
+import { AuthProvider } from './context/AuthContext';
+import { useAuthApi } from './context/authApi';
 import Register from './components/Register';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
@@ -24,13 +25,15 @@ const App = () => {
 };
 
 const ProtectedRoute = ({ component: Component }) => {
-  const { token } = useAuth();
+  const auth = useAuthApi();
+  const token = auth.token ?? (typeof auth.getToken === 'function' ? auth.getToken() : undefined);
   if (!token) return <Navigate to="/login" />;
   return <Component />;
 };
 
 const HomeRedirect = () => {
-  const { token } = useAuth();
+  const auth = useAuthApi();
+  const token = auth.token ?? (typeof auth.getToken === 'function' ? auth.getToken() : undefined);
   return token ? <Navigate to="/dashboard" /> : <Navigate to="/login" />;
 };
 

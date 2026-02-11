@@ -29,6 +29,7 @@ backend/uploads/
 backend/uploads/avatars/
 backend/uploads/attachments/
 
+
 uploads/
 **/uploads/avatars/
 **/uploads/attachments/

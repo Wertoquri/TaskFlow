@@ -15,9 +15,12 @@ import SettingsMenu from "../components/SettingsMenu";
 import Kanban from "../components/Kanban";
 import styles from "./Dashboard.module.css";
 import { useI18n } from "../context/I18nContext.jsx";
+import { useAuthApi } from "../context/authApi";
 
 export default function Dashboard() {
   const { t } = useI18n();
+  const auth = useAuthApi();
+  const user = typeof auth.getUser === 'function' ? auth.getUser() : auth.user;
   const [projects, setProjects] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalData, setModalData] = useState(null);

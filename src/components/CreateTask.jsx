@@ -2,12 +2,10 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useI18n } from "../context/I18nContext.jsx";
 import { getProjectMembers } from "../api";
-import { useAuth } from "../context/AuthContext.jsx";
 
 const CreateTask = () => {
   // Стан для збереження введених даних
   const { t } = useI18n();
-  const { token } = useAuth();
   const [taskData, setTaskData] = useState({
     project_id: "",
     title: "",

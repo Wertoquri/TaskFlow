@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useAuthApi } from "../context/authApi";
 import { loginUser } from "../api";
 import VerifyEmail from "./VerifyEmail";
 import styles from "./Login.module.css";
@@ -14,7 +14,8 @@ const Login = () => {
   const [error, setError] = useState('');
   const [needsVerification, setNeedsVerification] = useState(false);
   const [userId, setUserId] = useState(null);
-  const { login } = useAuth();
+  const auth = useAuthApi();
+  const login = auth.login?.bind(auth) ?? auth.login;
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
