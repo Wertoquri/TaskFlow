@@ -72,10 +72,18 @@ export default function ProfileMenu({ isOpen, onToggle }) {
                       if (!f) return;
                       try {
                         setUploading(true);
-                        await uploadAvatar(f, token || localStorage.getItem('token'));
-                        if (typeof refreshUser === 'function') await refreshUser();
+                        const result = await uploadAvatar(f, token || localStorage.getItem('token'));
+                        console.log('[ProfileMenu] Avatar uploaded:', result);
+                        // Force reload user data
+                        if (typeof refreshUser === 'function') {
+                          const updatedUser = await refreshUser();
+                          console.log('[ProfileMenu] User refreshed:', updatedUser);
+                        }
+                        // Force page reload to ensure avatar updates
+                        setTimeout(() => window.location.reload(), 500);
                       } catch (err) {
                         console.error('Avatar upload failed', err);
+                        alert('Failed to upload avatar: ' + (err.response?.data?.message || err.message));
                       } finally { setUploading(false); }
                     }} ref={(el) => { /* keep ref-less, forwarded by button click */ }} />
                     <button type="button" className={styles.uploadBtn} onClick={(ev) => {
@@ -83,6 +91,14 @@ export default function ProfileMenu({ isOpen, onToggle }) {
                       if (input) input.click();
                     }}>
                       {uploading ? (t('uploadingAvatar') || 'Uploading...') : (t('uploadAvatar') || 'Upload avatar')}
+                    </button>
+                    <button type="button" className={styles.refreshBtn} onClick={async () => {
+                      if (typeof refreshUser === 'function') {
+                        await refreshUser();
+                        window.location.reload();
+                      }
+                    }}>
+                      🔄
                     </button>
                   </label>
                 </div>

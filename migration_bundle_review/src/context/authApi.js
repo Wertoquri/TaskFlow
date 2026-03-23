@@ -1,5 +1,5 @@
 import { useContext } from 'react';
-import AuthContext from './AuthContext.jsx';
+import { AuthContext } from './AuthContext.jsx';
 
 // Lightweight adapter exposing a minimal, stable API for consumers.
 export function useAuthApi() {
@@ -8,6 +8,8 @@ export function useAuthApi() {
     // keep `user` for backward compatibility with consumers using `auth.user`
     user: () => ctx?.user ?? null,
     getUser: () => ctx?.user ?? null,
+    token: ctx?.token ?? null,
+    getToken: () => ctx?.token ?? null,
     login: (...args) => ctx?.login && ctx.login(...args),
     logout: () => ctx?.logout && ctx.logout(),
     isAuthenticated: () => !!ctx?.user

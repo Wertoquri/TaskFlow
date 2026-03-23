@@ -31,24 +31,27 @@ async function uploadAvatar(req, res) {
       return res.status(500).json({ message: 'Uploaded file not found on server' });
     }
 
-    // Try to update users table with avatar path; be defensive if column missing
-    try {
-      await pool.query('UPDATE users SET avatar = ? WHERE id = ?', [relPath, userId]);
-    } catch (e) {
-      console.warn('[uploadAvatar] update avatar column failed, trying avatar_url:', e && e.message ? e.message : e);
-      try {
-        await pool.query('UPDATE users SET avatar_url = ? WHERE id = ?', [relPath, userId]);
-      } catch (e2) {
-        // ignore DB update errors, return url anyway
-        console.warn('Could not persist avatar to users table:', e2 && e2.message ? e2.message : e2);
-      }
-    }
+    // Update users table with avatar path
+    await pool.query('UPDATE users SET avatar = ? WHERE id = ?', [relPath, userId]);
 
     // Return a full URL if we can construct one from env, otherwise return relative path
     const host = process.env.PUBLIC_HOST || '';
     const avatarUrl = host ? `${host}${relPath}` : relPath;
 
-    res.json({ avatarUrl });
+    // Also return updated user data
+    const [rows] = await pool.query('SELECT id, username, email, avatar FROM users WHERE id = ?', [userId]);
+    const user = rows[0];
+
+    res.json({ 
+      avatarUrl,
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        avatar: relPath,
+        avatar_url: avatarUrl
+      }
+    });
   } catch (err) {
     console.error('Upload avatar error:', err && err.stack ? err.stack : err);
     res.status(500).json({ message: 'Server error', error: String(err) });

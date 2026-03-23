@@ -25,7 +25,6 @@ export default function InvitationsBell({ isOpen, onToggle }) {
     load();
   }, [token]);
 
-  // close when clicking outside
   useEffect(() => {
     function onDocClick(e) {
       if (!isOpen) return;
@@ -41,7 +40,6 @@ export default function InvitationsBell({ isOpen, onToggle }) {
   useEffect(() => {
     if (!socket) return;
     const handler = (payload) => {
-      // new invite for current user
       load();
     };
     socket.on("invite:new", handler);
@@ -65,71 +63,152 @@ export default function InvitationsBell({ isOpen, onToggle }) {
 
   return (
     <div style={{ position: "relative" }} ref={rootRef}>
-      <button 
-        title={t('invitationsTitle')} 
+      <button
+        title={t('invitationsTitle')}
         onClick={onToggle}
         style={{
           position: "relative",
-          padding: "10px 16px",
+          padding: "12px 18px",
           background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
           color: "#fff",
           border: "none",
-          borderRadius: "10px",
+          borderRadius: "12px",
           cursor: "pointer",
           fontWeight: 600,
-          fontSize: "16px",
-          boxShadow: "0 2px 8px rgba(102,126,234,0.3)",
-          transition: "all 0.3s",
+          fontSize: "18px",
+          boxShadow: "0 4px 14px rgba(102,126,234,0.4)",
+          transition: "all 0.3s cubic-bezier(0.4,0,0.2,1)",
           display: "flex",
           alignItems: "center",
-          gap: "6px"
+          gap: "8px"
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.transform = "translateY(-2px)";
-          e.currentTarget.style.boxShadow = "0 4px 12px rgba(102,126,234,0.4)";
+          e.currentTarget.style.transform = "translateY(-3px) scale(1.02)";
+          e.currentTarget.style.boxShadow = "0 6px 20px rgba(102,126,234,0.5)";
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.transform = "translateY(0)";
-          e.currentTarget.style.boxShadow = "0 2px 8px rgba(102,126,234,0.3)";
+          e.currentTarget.style.transform = "translateY(0) scale(1)";
+          e.currentTarget.style.boxShadow = "0 4px 14px rgba(102,126,234,0.4)";
         }}
       >
-        📨
-        {count > 0 && (
-          <span style={{ 
-            background: "#ef4444", 
-            color: "#fff", 
-            borderRadius: "50%", 
-            padding: "2px 6px",
-            fontSize: "12px",
-            fontWeight: 700,
-            minWidth: "20px",
-            textAlign: "center"
-          }}>
-            {count}
-          </span>
-        )}
+        <span style={{ position: "relative", display: "inline-block" }}>
+          📨
+          {count > 0 && (
+            <span style={{
+              position: "absolute",
+              top: "-8px",
+              right: "-8px",
+              background: "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)",
+              color: "#fff",
+              borderRadius: "50%",
+              padding: "3px 7px",
+              fontSize: "11px",
+              fontWeight: 800,
+              minWidth: "22px",
+              textAlign: "center",
+              boxShadow: "0 2px 6px rgba(239,68,68,0.4)",
+              animation: "pulse 2s infinite"
+            }}>
+              {count > 99 ? '99+' : count}
+            </span>
+          )}
+        </span>
       </button>
       {isOpen && (
-        <div style={{ position: "absolute", right: 0, top: "120%", background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8, padding: 8, minWidth: 260, boxShadow: "0 8px 24px rgba(0,0,0,.12)" }}>
-          <div style={{ fontWeight: 700, marginBottom: 8 }}>{t('invitationsTitle')}</div>
-          {invites.length === 0 ? (
-            <div style={{ color: "#64748b" }}>{t('noInvitations')}</div>
-          ) : (
-            invites.map((inv) => (
-              <div key={inv.id} style={{ display: "flex", flexDirection: 'column', gap: 8, padding: "6px 0" }}>
-                <ProjectInviteCard
-                  data={{ sender_id: inv.sender_id, project_id: inv.project_id, project_name: inv.project_name, invitation_id: inv.id }}
-                  createdAt={inv.created_at}
-                />
-                <div style={{ display: "flex", gap: 6, alignSelf: 'flex-end' }}>
-                  <button onClick={() => onAccept(inv.id)} title={t('accept')}>✅</button>
-                  <button onClick={() => onDecline(inv.id)} title={t('decline')}>❌</button>
-                </div>
+        <div
+          style={{
+            position: "absolute",
+            right: 0,
+            top: "calc(100% + 12px)",
+            background: "#fff",
+            border: "1px solid #e2e8f0",
+            borderRadius: "16px",
+            padding: "0",
+            minWidth: "380px",
+            maxWidth: "460px",
+            maxHeight: "520px",
+            overflowY: "auto",
+            boxShadow: "0 12px 40px rgba(0,0,0,0.15)",
+            zIndex: 1000,
+          }}
+        >
+          {/* Header */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "16px 20px",
+              borderBottom: "1px solid #e2e8f0",
+              background: "linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)"
+            }}
+          >
+            <div style={{
+              fontWeight: 800,
+              fontSize: "16px",
+              color: "#1e293b",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px"
+            }}>
+              📨 {t('invitationsTitle')}
+              {count > 0 && (
+                <span style={{
+                  background: "#ef4444",
+                  color: "#fff",
+                  borderRadius: "50%",
+                  padding: "2px 8px",
+                  fontSize: "11px",
+                  fontWeight: 700
+                }}>
+                  {count}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Content */}
+          <div style={{ padding: "16px" }}>
+            {invites.length === 0 ? (
+              <div style={{
+                color: "#64748b",
+                textAlign: "center",
+                padding: "32px 16px",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: "12px"
+              }}>
+                <span style={{ fontSize: "48px" }}>📨</span>
+                <div style={{ fontSize: "14px", fontWeight: 500 }}>{t('noInvitations')}</div>
               </div>
-            ))
-          )}
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+                {invites.map((inv) => (
+                  <div key={inv.id} style={{
+                    position: "relative",
+                    paddingBottom: "14px",
+                    marginBottom: "14px",
+                    borderBottom: "1px dashed #e2e8f0"
+                  }}>
+                    <ProjectInviteCard
+                      data={{ sender_id: inv.sender_id, project_id: inv.project_id, project_name: inv.project_name, invitation_id: inv.id }}
+                      createdAt={inv.created_at}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
+
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.1); }
+        }
+      `}</style>
     </div>
   );
 }

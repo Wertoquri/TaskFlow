@@ -122,17 +122,26 @@ export default function ProjectChat({ projectId }) {
   return (
     <div
       style={{
-        background: "#fff",
-        border: "none",
-        borderRadius: "16px",
-        padding: "24px",
-        boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
-        display: "flex",
-        flexDirection: "column",
-        height: "500px",
+        background: 'linear-gradient(135deg, #818cf8 0%, #a78bfa 100%)',
+        borderRadius: '12px',
+        padding: '16px',
+        boxShadow: '0 4px 14px rgba(129,140,248,0.4)',
+        transition: 'all 0.3s cubic-bezier(0.4,0,0.2,1)',
+        display: 'flex',
+        flexDirection: 'column',
+        height: '500px',
+        position: 'relative'
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.transform = 'translateY(-3px) scale(1.02)';
+        e.currentTarget.style.boxShadow = '0 6px 20px rgba(129,140,248,0.5)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.transform = 'translateY(0) scale(1)';
+        e.currentTarget.style.boxShadow = '0 4px 14px rgba(129,140,248,0.4)';
       }}
     >
-      <h3 style={{ margin: "0 0 16px 0", fontSize: "18px", fontWeight: 700, color: "#1e293b" }}>
+      <h3 style={{ margin: "0 0 14px 0", fontSize: "16px", fontWeight: 700, color: "#fff", textShadow: '0 1px 2px rgba(0,0,0,0.1)' }}>
         {t('projectChatTitle')}
       </h3>
 
@@ -142,8 +151,8 @@ export default function ProjectChat({ projectId }) {
           overflowY: "auto",
           marginBottom: "12px",
           padding: "8px",
-          background: "#f8fafc",
-          borderRadius: "6px",
+          background: "rgba(255,255,255,0.95)",
+          borderRadius: "8px",
         }}
       >
         {loading ? (

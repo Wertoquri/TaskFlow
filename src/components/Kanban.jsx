@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { getTasksByProject, updateTask, uploadTaskAttachment, getTaskAttachments, deleteTaskAttachment as apiDeleteAttachment } from "../api";
 import io from "socket.io-client";
 import Toast from "./Toast";
+import KanbanActivityToast from "./KanbanActivityToast";
 import styles from "./Kanban.module.css";
 import { useI18n } from "../context/I18nContext.jsx";
 
@@ -15,6 +16,7 @@ export default function Kanban({ project, filters }) {
   const [tasks, setTasks] = useState([]);
   const [socket, setSocket] = useState(null);
   const [toast, setToast] = useState(null);
+  const [activityToast, setActivityToast] = useState(null);
   const [editingLabels, setEditingLabels] = useState(null);
   const [newLabel, setNewLabel] = useState("");
   const [loadingAttachments, setLoadingAttachments] = useState({});
@@ -82,14 +84,29 @@ export default function Kanban({ project, filters }) {
     function onCreated(task) {
       if (task.project_id !== project?.id) return;
       setTasks((prev) => [task, ...prev]);
+      setActivityToast({
+        type: 'task-created',
+        message: `"${task.title}" has been created`,
+        data: { taskName: task.title, userName: task.created_by_name }
+      });
     }
     function onUpdated(task) {
       setTasks((prev) =>
         prev.map((x) => (String(x.id) === String(task.id) ? { ...x, ...task } : x))
       );
+      setActivityToast({
+        type: 'task-updated',
+        message: `"${task.title}" was updated`,
+        data: { taskName: task.title }
+      });
     }
     function onDeleted({ id }) {
       setTasks((prev) => prev.filter((x) => String(x.id) !== String(id)));
+      setActivityToast({
+        type: 'task-deleted',
+        message: `Task #${id} was deleted`,
+        data: {}
+      });
     }
     function onAttachmentAdded(payload) {
       // payload: { id, task_id, filename, original_name, mime_type, size, url, uploaded_by }
@@ -102,6 +119,11 @@ export default function Kanban({ project, filters }) {
           return { ...t, attachments: [payload, ...(t.attachments || [])] };
         })
       );
+      setActivityToast({
+        type: 'attachment-added',
+        message: `"${payload.original_name}" attached to task #${payload.task_id}`,
+        data: { fileName: payload.original_name }
+      });
     }
 
     function onAttachmentDeleted(payload) {
@@ -115,6 +137,11 @@ export default function Kanban({ project, filters }) {
             : t
         )
       );
+      setActivityToast({
+        type: 'attachment-deleted',
+        message: `Attachment removed from task #${payload.task_id}`,
+        data: {}
+      });
     }
     s.on("task-created", onCreated);
     s.on("task-updated", onUpdated);
@@ -189,7 +216,11 @@ export default function Kanban({ project, filters }) {
             return { ...x, attachments: [attachment, ...(x.attachments || [])] };
           })
         );
-        setToast({ message: t('attachmentUploaded') || 'Attachment uploaded', type: 'success' });
+        setActivityToast({
+          type: 'attachment-added',
+          message: `"${attachment.original_name}" attached to "${task.title}"`,
+          data: { fileName: attachment.original_name, taskName: task.title }
+        });
       } catch (err) {
         console.error('Upload attachment error', err);
         setToast({ message: t('attachmentUploadError') || 'Attachment upload error', type: 'error' });
@@ -280,7 +311,11 @@ export default function Kanban({ project, filters }) {
                                 const token = localStorage.getItem('token');
                                 await apiDeleteAttachment(task.id, att.id, token);
                                 setTasks((prev) => prev.map((x) => x.id === task.id ? { ...x, attachments: (x.attachments || []).filter(a => a.id !== att.id) } : x));
-                                setToast({ message: t('attachmentDeleted') || 'Файл успішно видалено', type: 'success' });
+                                setActivityToast({
+                                  type: 'attachment-deleted',
+                                  message: `Attachment "${att.original_name}" removed from "${task.title}"`,
+                                  data: { fileName: att.original_name, taskName: task.title }
+                                });
                               } catch (err) {
                                 console.error('Delete attachment error', err);
                                 setToast({ message: t('attachmentDeleteError') || 'Не вдалося видалити файл. Спробуйте ще раз.', type: 'error' });
@@ -330,9 +365,10 @@ export default function Kanban({ project, filters }) {
                           { priority: newPriority },
                           token
                         );
-                        setToast({
-                          message: t('priorityUpdated'),
-                          type: "success",
+                        setActivityToast({
+                          type: 'priority-changed',
+                          message: `"${task.title}" priority changed to ${t('priority' + newPriority.charAt(0).toUpperCase() + newPriority.slice(1)) || newPriority}`,
+                          data: { taskName: task.title, newPriority }
                         });
                       } catch (err) {
                         // revert on fail
@@ -386,9 +422,10 @@ export default function Kanban({ project, filters }) {
                                     { labels: newLabels },
                                     token
                                   );
-                                  setToast({
-                                    message: t('labelRemoved'),
-                                    type: "success",
+                                  setActivityToast({
+                                    type: 'label-removed',
+                                    message: `Label "${l}" removed from "${task.title}"`,
+                                    data: { taskName: task.title, label: l }
                                   });
                                 } catch (err) {
                                   setTasks((prev) =>
@@ -440,7 +477,11 @@ export default function Kanban({ project, filters }) {
                           try {
                             const token = localStorage.getItem("token");
                             await updateTask(task.id, { labels: newLabels }, token);
-                            setToast({ message: t('labelAdded'), type: 'success' });
+                            setActivityToast({
+                              type: 'label-added',
+                              message: `Label "${newLabel.trim()}" added to "${task.title}"`,
+                              data: { taskName: task.title, label: newLabel.trim() }
+                            });
                           } catch (err) {
                             setTasks((prev) =>
                               prev.map((x) =>
@@ -496,6 +537,14 @@ export default function Kanban({ project, filters }) {
           message={toast.message}
           type={toast.type}
           onClose={() => setToast(null)}
+        />
+      )}
+      {activityToast && (
+        <KanbanActivityToast
+          message={activityToast.message}
+          type={activityToast.type}
+          data={activityToast.data}
+          onClose={() => setActivityToast(null)}
         />
       )}
     </div>

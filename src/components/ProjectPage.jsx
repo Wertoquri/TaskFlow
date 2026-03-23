@@ -211,7 +211,7 @@ const ProjectPage = () => {
           </button>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "30px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "30px", alignItems: 'start' }}>
           <div>
             <InviteUserPanel projectId={Number(id)} token={token} />
           </div>
@@ -279,11 +279,22 @@ const ProjectPage = () => {
                 value={assignedTo}
                 onChange={(e) => setAssignedTo(e.target.value)}
                 style={{
-                  padding: "10px",
+                  padding: "10px 14px",
                   border: "1px solid #e2e8f0",
                   borderRadius: "8px",
                   fontSize: "14px",
-                  background: "#fff"
+                  background: "#fff",
+                  cursor: 'pointer',
+                  outline: 'none',
+                  transition: 'all 0.2s'
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = '#6366f1';
+                  e.target.style.boxShadow = '0 0 0 3px rgba(99,102,241,0.1)';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = '#e2e8f0';
+                  e.target.style.boxShadow = 'none';
                 }}
               >
                 <option value="">{t('selectMember') || 'Виберіть учасника'}</option>
@@ -300,8 +311,29 @@ const ProjectPage = () => {
                     setMembers(rows || []);
                   } catch {}
                 }}
-                style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#ffffff', cursor: 'pointer' }}
-              >{t('refresh') || 'Оновити'}</button>
+                style={{ 
+                  padding: '10px 14px', 
+                  borderRadius: 8, 
+                  border: 'none', 
+                  background: 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)', 
+                  color: '#fff', 
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  fontSize: '13px',
+                  boxShadow: '0 2px 8px rgba(6,182,212,0.3)',
+                  transition: 'all 0.3s'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(6,182,212,0.4)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 2px 8px rgba(6,182,212,0.3)';
+                }}
+              >
+                🔄 {t('refresh') || 'Оновити'}
+              </button>
             </div>
             {members.length === 0 && (
               <div style={{ color: '#64748b', fontSize: 12 }}>{t('noMembers') || 'Немає учасників'}</div>
@@ -310,20 +342,28 @@ const ProjectPage = () => {
               <button
                 onClick={addTask}
                 style={{
-                  padding: "10px 20px",
-                  background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                  padding: "12px 24px",
+                  background: "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)",
                   color: "#fff",
                   border: "none",
-                  borderRadius: "8px",
+                  borderRadius: "10px",
                   fontSize: "14px",
-                  fontWeight: 600,
+                  fontWeight: 700,
                   cursor: "pointer",
-                  boxShadow: "0 2px 4px rgba(102,126,234,0.3)",
-                  transition: "all 0.3s",
+                  boxShadow: "0 4px 12px rgba(34,197,94,0.3)",
+                  transition: "all 0.3s cubic-bezier(0.4,0,0.2,1)",
                   whiteSpace: 'nowrap'
                 }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = "translateY(-3px)";
+                  e.currentTarget.style.boxShadow = "0 6px 16px rgba(34,197,94,0.4)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "translateY(0)";
+                  e.currentTarget.style.boxShadow = "0 4px 12px rgba(34,197,94,0.3)";
+                }}
               >
-                + {t('add')}
+                ✨ + {t('add')}
               </button>
             </div>
           </div>
@@ -351,40 +391,58 @@ const ProjectPage = () => {
                   <span style={{ color: "#64748b", marginLeft: "12px", fontSize: "14px" }}>— {task.description}</span>
                 </div>
                 <div style={{ display: "flex", gap: "8px" }}>
-                  <button 
+                  <button
                     onClick={() => {
                       console.log('ProjectPage edit click', { taskId: task.id });
                       updateTask(task.id)
                     }}
                     style={{
-                      padding: "8px 16px",
-                      background: "#10b981",
+                      padding: "10px 18px",
+                      background: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
                       color: "#fff",
                       border: "none",
                       borderRadius: "8px",
                       fontSize: "13px",
-                      fontWeight: 600,
+                      fontWeight: 700,
                       cursor: "pointer",
-                      transition: "all 0.3s"
+                      transition: "all 0.3s cubic-bezier(0.4,0,0.2,1)",
+                      boxShadow: "0 2px 8px rgba(59,130,246,0.3)"
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = "translateY(-2px)";
+                      e.currentTarget.style.boxShadow = "0 4px 12px rgba(59,130,246,0.4)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = "translateY(0)";
+                      e.currentTarget.style.boxShadow = "0 2px 8px rgba(59,130,246,0.3)";
                     }}
                   >
-                    {t('edit')}
+                    ✏️ {t('edit')}
                   </button>
                   <button
                     onClick={() => deleteTask(task.id)}
                     style={{
-                      padding: "8px 16px",
-                      background: "#ef4444",
+                      padding: "10px 18px",
+                      background: "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)",
                       color: "#fff",
                       border: "none",
                       borderRadius: "8px",
                       fontSize: "13px",
-                      fontWeight: 600,
+                      fontWeight: 700,
                       cursor: "pointer",
-                      transition: "all 0.3s"
+                      transition: "all 0.3s cubic-bezier(0.4,0,0.2,1)",
+                      boxShadow: "0 2px 8px rgba(239,68,68,0.3)"
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = "translateY(-2px)";
+                      e.currentTarget.style.boxShadow = "0 4px 12px rgba(239,68,68,0.4)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = "translateY(0)";
+                      e.currentTarget.style.boxShadow = "0 2px 8px rgba(239,68,68,0.3)";
                     }}
                   >
-                    {t('delete')}
+                    🗑️ {t('delete')}
                   </button>
                 </div>
               </li>
@@ -409,16 +467,27 @@ const ProjectPage = () => {
                   }
                 }}
                 style={{
-                  padding: '8px 12px',
-                  borderRadius: 8,
+                  padding: '10px 16px',
+                  borderRadius: 10,
                   border: 'none',
-                  background: 'linear-gradient(90deg,#f97316,#ef4444)',
+                  background: 'linear-gradient(135deg, #f97316 0%, #ef4444 100%)',
                   color: '#fff',
                   cursor: 'pointer',
-                  fontWeight: 600,
+                  fontWeight: 700,
+                  fontSize: '13px',
+                  boxShadow: '0 3px 10px rgba(249,115,22,0.3)',
+                  transition: 'all 0.3s cubic-bezier(0.4,0,0.2,1)'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 5px 14px rgba(249,115,22,0.4)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 3px 10px rgba(249,115,22,0.3)';
                 }}
               >
-                {t('clearActivity')}
+                🧹 {t('clearActivity')}
               </button>
             </div>
             {projectActivity.length === 0 && !activityLoading && (
@@ -476,9 +545,35 @@ const ProjectPage = () => {
               );
             })}
             {activityHasMore && (
-              <div style={{ textAlign: 'center' }}>
-                <button onClick={() => loadProjectActivity(activityPage + 1)} disabled={activityLoading} style={{ padding: '8px 12px', borderRadius: 8, border: 'none', background: '#eef2ff', cursor: 'pointer' }}>
-                  {activityLoading ? t('loading') : t('loadMore') || 'Load more'}
+              <div style={{ textAlign: 'center', marginTop: '16px' }}>
+                <button 
+                  onClick={() => loadProjectActivity(activityPage + 1)} 
+                  disabled={activityLoading} 
+                  style={{ 
+                    padding: '10px 20px', 
+                    borderRadius: 10, 
+                    border: 'none', 
+                    background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)', 
+                    color: '#fff',
+                    cursor: activityLoading ? 'not-allowed' : 'pointer',
+                    opacity: activityLoading ? 0.7 : 1,
+                    fontWeight: 700,
+                    fontSize: '13px',
+                    boxShadow: activityLoading ? 'none' : '0 3px 10px rgba(99,102,241,0.3)',
+                    transition: 'all 0.3s cubic-bezier(0.4,0,0.2,1)'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!activityLoading) {
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.boxShadow = '0 5px 14px rgba(99,102,241,0.4)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = activityLoading ? 'none' : '0 3px 10px rgba(99,102,241,0.3)';
+                  }}
+                >
+                  {activityLoading ? '⏳ Loading...' : '📖 ' + (t('loadMore') || 'Load more')}
                 </button>
               </div>
             )}
