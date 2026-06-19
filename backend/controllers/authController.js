@@ -93,7 +93,8 @@ const register = async (req, res) => {
     res.status(201).json({ 
       message: 'Код підтвердження надіслано на вашу пошту',
       userId: result.insertId,
-      email: email
+      email,
+      ...(process.env.EMAIL_MODE === 'console' ? { verificationCode } : {})
     });
   } catch (err) {
     console.error(err);

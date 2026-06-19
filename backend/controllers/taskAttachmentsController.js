@@ -146,6 +146,8 @@ const fs = require('fs');
 const deleteTaskAttachment = async (req, res) => {
   const { id, attachmentId } = req.params;
   try {
+    const taskRows = await getQuery('SELECT project_id FROM tasks WHERE id = ?', [id]);
+    const projectId = taskRows[0]?.project_id;
     const rows = await getQuery(
       'SELECT id, filename FROM task_attachments WHERE id = ? AND task_id = ?',
       [attachmentId, id]

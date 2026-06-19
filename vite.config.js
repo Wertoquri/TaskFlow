@@ -4,6 +4,11 @@ export default {
   plugins: [react()],
   server: {
     port: 3000,
-    strictPort: true
+    strictPort: true,
+    proxy: {
+      '/api': 'http://localhost:5000',
+      '/uploads': 'http://localhost:5000',
+      '/socket.io': { target: 'http://localhost:5000', ws: true },
+    },
   }
 };

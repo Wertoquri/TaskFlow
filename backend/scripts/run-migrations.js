@@ -31,9 +31,7 @@ async function runSqlFile(filePath) {
 
 async function main() {
   const migrationsDir = path.join(__dirname, '..', 'migrations');
-  const files = [
-    'add_task_activity.sql',
-  ];
+  const files = ['000_initial_schema.sql'];
   for (const f of files) {
     const full = path.join(migrationsDir, f);
     if (fs.existsSync(full)) {
