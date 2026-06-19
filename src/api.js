@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-export const API_URL = 'http://localhost:5000/api';
+export const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 export const registerUser = async (username, email, password) => {
   const response = await axios.post(`${API_URL}/register`, { username, email, password });

@@ -1,0 +1,24 @@
+services:
+  db:
+    image: mysql:8.4
+    environment: { MYSQL_DATABASE: TaskFlow, MYSQL_USER: taskflow, MYSQL_PASSWORD: taskflow, MYSQL_ROOT_PASSWORD: local-root-only }
+    volumes: [taskflow-db:/var/lib/mysql]
+    healthcheck: { test: ["CMD", "mysqladmin", "ping", "-h", "localhost"], interval: 5s, timeout: 5s, retries: 20 }
+  api:
+    build: ./backend
+    environment:
+      DB_HOST: db
+      DB_USER: taskflow
+      DB_PASSWORD: taskflow
+      DB_NAME: TaskFlow
+      JWT_SECRET: ${JWT_SECRET:-local-demo-secret-change-me}
+      EMAIL_MODE: console
+      DEMO_SEED: "true"
+      CLIENT_ORIGIN: http://localhost:3000
+    depends_on: { db: { condition: service_healthy } }
+    volumes: [taskflow-uploads:/app/uploads]
+  web:
+    build: .
+    ports: ["3000:80"]
+    depends_on: [api]
+volumes: { taskflow-db: {}, taskflow-uploads: {} }

@@ -28,6 +28,10 @@ function generateVerificationCode() {
 
 // Надсилання коду підтвердження
 async function sendVerificationEmail(email, code) {
+  if ((process.env.EMAIL_MODE || '').toLowerCase() === 'console') {
+    console.log(`[demo-email] verification code for ${email}: ${code}`);
+    return true;
+  }
   const mailOptions = {
     from: fromAddress,
     to: email,
