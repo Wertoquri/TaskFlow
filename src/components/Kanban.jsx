@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { getTasksByProject, updateTask, uploadTaskAttachment, getTaskAttachments, deleteTaskAttachment as apiDeleteAttachment } from "../api";
+import { getTasksByProject, updateTask, uploadTaskAttachment, getTaskAttachments, deleteTaskAttachment as apiDeleteAttachment, SOCKET_URL } from "../api";
 import io from "socket.io-client";
 import Toast from "./Toast";
 import styles from "./Kanban.module.css";
@@ -77,7 +77,7 @@ export default function Kanban({ project, filters }) {
   }, [tasks]);
 
   useEffect(() => {
-    const s = io("http://localhost:5000");
+    const s = io(SOCKET_URL);
     setSocket(s);
     function onCreated(task) {
       if (task.project_id !== project?.id) return;

@@ -16,10 +16,14 @@ async function runSqlFile(filePath) {
   const sql = fs.readFileSync(filePath, 'utf8');
   const conn = await mysql.createConnection({
     host: process.env.DB_HOST || fallbackConfig.host,
+    port: Number(process.env.DB_PORT || fallbackConfig.port || 3306),
     user: process.env.DB_USER || fallbackConfig.user,
     password: process.env.DB_PASSWORD || fallbackConfig.password,
     database: process.env.DB_NAME || fallbackConfig.database,
     multipleStatements: true,
+    ...(process.env.DB_SSL === 'true'
+      ? { ssl: { minVersion: 'TLSv1.2', rejectUnauthorized: true } }
+      : {}),
   });
   try {
     await conn.query(sql);

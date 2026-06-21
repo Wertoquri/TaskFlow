@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { useI18n } from "../context/I18nContext.jsx";
+import { API_URL } from "../api";
 
 const CreateProject = () => {
   const [title, setTitle] = useState("");
@@ -19,7 +20,7 @@ const CreateProject = () => {
 
     try {
       const response = await axios.post(
-        "http://localhost:5000/api/projects",
+        `${API_URL}/projects`,
         {
           title,
           description,

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { getTasksByProject, createTask, updateTask, deleteTask, uploadTaskAttachment, deleteTaskAttachment, getTaskActivity, getProjectActivity } from "../api";
+import { getTasksByProject, createTask, updateTask, deleteTask, uploadTaskAttachment, deleteTaskAttachment, getTaskActivity, getProjectActivity, SOCKET_URL } from "../api";
 import Toast from "./Toast";
 import styles from "./TasksModal.module.css";
 import { useI18n } from "../context/I18nContext.jsx";
@@ -73,7 +73,7 @@ export default function TasksModal({ open, onClose, project, filters }) {
 
   useEffect(() => {
     // Socket sync for attachments in modal
-    const s = io?.("http://localhost:5000");
+    const s = io?.(SOCKET_URL);
     if (!s) return;
 
     function onAttachmentAdded(payload) {

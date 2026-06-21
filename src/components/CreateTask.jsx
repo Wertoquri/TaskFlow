@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useI18n } from "../context/I18nContext.jsx";
-import { getProjectMembers } from "../api";
+import { API_URL, getProjectMembers } from "../api";
 import { useAuth } from "../context/AuthContext.jsx";
 
 const CreateTask = () => {
@@ -43,7 +43,7 @@ const CreateTask = () => {
 
     try {
       const response = await axios.post(
-        "http://localhost:5000/api/tasks",
+        `${API_URL}/tasks`,
         taskData
       );
       console.log("Task created:", response.data);

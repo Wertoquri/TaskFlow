@@ -14,11 +14,21 @@ dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 const app = express();
 const port = process.env.PORT || 5000;
+const isProduction = process.env.NODE_ENV === 'production';
+const clientOrigins = (
+    process.env.CLIENT_ORIGIN || process.env.RENDER_EXTERNAL_URL || 'http://localhost:3000'
+).split(',').map((origin) => origin.trim()).filter(Boolean);
+
+if (isProduction && (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32)) {
+    throw new Error('JWT_SECRET must contain at least 32 characters in production.');
+}
+
+if (isProduction) app.set('trust proxy', 1);
 
 // Middleware
 app.use(express.json());
 app.use(cors({
-    origin: (process.env.CLIENT_ORIGIN || 'http://localhost:3000').split(','),
+    origin: clientOrigins,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
@@ -27,18 +37,10 @@ app.use(cors({
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Налаштування multer для вкладень задач
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, path.join(__dirname, 'uploads', 'tasks'));
-    },
-    filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-        const safeName = file.originalname.replace(/[^a-zA-Z0-9_.-]/g, '_');
-        cb(null, uniqueSuffix + '-' + safeName);
-    }
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 10 * 1024 * 1024, files: 1 },
 });
-
-const upload = multer({ storage });
 app.set('uploadTasks', upload);
 
 // Підключаємо роутер автентифікації (реєстрація, логін, верифікація email)
@@ -91,16 +93,20 @@ app.get('/api/health', async (req, res) => {
         res.json({ ok: true, db: rows && rows.length ? rows[0].ok : null });
     } catch (err) {
         console.error('Health check error:', err && err.stack ? err.stack : err);
-        res.status(500).json({ ok: false, message: 'DB error', error: String(err) });
+        res.status(500).json({ ok: false, message: 'DB error' });
     }
 });
 
 // MySQL config (з .env)
 const dbConfig = {
     host: process.env.DB_HOST,
+    port: Number(process.env.DB_PORT || 3306),
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME
+    database: process.env.DB_NAME,
+    ...(process.env.DB_SSL === 'true'
+        ? { ssl: { minVersion: 'TLSv1.2', rejectUnauthorized: true } }
+        : {})
 };
 
 // Функція отримання з'єднання
@@ -110,9 +116,22 @@ async function getConnection() {
 }
 
 // Тестовий маршрут
-app.get('/', (req, res) => {
-    res.send('Hello, TaskFlow API!');
-});
+if (!isProduction) {
+    app.get('/', (req, res) => {
+        res.send('Hello, TaskFlow API!');
+    });
+}
+
+if (isProduction) {
+    const frontendDist = path.resolve(__dirname, '../dist');
+    app.use(express.static(frontendDist));
+    app.use((req, res, next) => {
+        if (req.method !== 'GET' || req.path.startsWith('/api/') || req.path.startsWith('/uploads/')) {
+            return next();
+        }
+        return res.sendFile(path.join(frontendDist, 'index.html'));
+    });
+}
 
 // Маршрути реєстрації/логіну перенесено в authRoutes з підтримкою верифікації email
 
@@ -120,7 +139,7 @@ app.get('/', (req, res) => {
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: (process.env.CLIENT_ORIGIN || 'http://localhost:3000').split(','),
+        origin: clientOrigins,
         methods: ['GET','POST','PUT','DELETE']
     }
 });

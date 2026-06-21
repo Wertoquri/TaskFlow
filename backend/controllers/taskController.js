@@ -1,6 +1,7 @@
 const { getQuery, run } = require('../db');
 const { getQuery: q } = require('../db');
 const { createNotification } = require('../helpers/notifications');
+const { mediaUrl } = require('../services/mediaStorage');
 
 // ---------------- CREATE TASK ----------------
 const createTask = async (req, res) => {
@@ -74,7 +75,7 @@ const getTasks = async (req, res) => {
             if (!byTask[key]) byTask[key] = [];
             byTask[key].push({
                 ...att,
-                url: `/uploads/tasks/${att.filename}`,
+                url: mediaUrl(att.filename, 'tasks'),
             });
         }
 

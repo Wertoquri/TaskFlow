@@ -15,7 +15,7 @@ import MembersPanel from "./MembersPanel.jsx";
 import InviteUserPanel from "./InviteUserPanel.jsx";
 import ProjectChat from "./ProjectChat.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
-import { getProjectMembers, getProjectActivity, clearProjectActivity } from "../api";
+import { API_URL, SOCKET_URL, getProjectMembers, getProjectActivity, clearProjectActivity } from "../api";
 import io from "socket.io-client";
 
 const ProjectPage = () => {
@@ -54,7 +54,7 @@ const ProjectPage = () => {
 
   useEffect(() => {
     // Real-time project activity: listen to task-activity and append if task belongs to this project
-    const s = io("http://localhost:5000");
+    const s = io(SOCKET_URL);
     setSocket(s);
     function onTaskActivity(activity) {
       try {
@@ -76,7 +76,7 @@ const ProjectPage = () => {
 
   const fetchTasks = async () => {
     try {
-      const res = await axios.get(`http://localhost:5000/api/tasks/${id}`, {
+      const res = await axios.get(`${API_URL}/tasks/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setTasks(res.data);
@@ -117,7 +117,7 @@ const ProjectPage = () => {
     };
 
     try {
-      const res = await axios.post("http://localhost:5000/api/tasks", payload, {
+      await axios.post(`${API_URL}/tasks`, payload, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -133,7 +133,7 @@ const ProjectPage = () => {
   const deleteTask = async (taskId) => {
     if (!confirm(t('confirmDeleteTask') || 'Видалити завдання?')) return;
     try {
-      await axios.delete(`http://localhost:5000/api/tasks/${taskId}`, {
+      await axios.delete(`${API_URL}/tasks/${taskId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setTasks((s) => s.filter((t) => t.id !== taskId));
@@ -148,7 +148,7 @@ const ProjectPage = () => {
     if (!newName) return;
     try {
       await axios.put(
-        `http://localhost:5000/api/tasks/${taskId}`,
+        `${API_URL}/tasks/${taskId}`,
         { title: newName },
         {
           headers: {

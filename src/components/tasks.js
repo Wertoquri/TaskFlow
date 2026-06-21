@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import io from 'socket.io-client';
 import { useI18n } from '../context/I18nContext.jsx';
+import { SOCKET_URL } from '../api';
 
-const socket = io('http://localhost:5000');
+const socket = io(SOCKET_URL);
 
 const Tasks = () => {
   const [tasks, setTasks] = useState([]);
