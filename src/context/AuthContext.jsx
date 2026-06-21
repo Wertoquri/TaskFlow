@@ -2,7 +2,7 @@ import React, { createContext, useState, useContext, useEffect } from "react";
 import io from "socket.io-client";
 import { useNavigate } from "react-router-dom";
 import axios from 'axios';
-import { getMe } from '../api';
+import { getMe, SOCKET_URL } from '../api';
 
 export const AuthContext = createContext();
 
@@ -64,7 +64,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem("token", newToken);
     setToken(newToken);
     // connect socket and join user room
-    const s = io("http://localhost:5000", { auth: { token: newToken } });
+    const s = io(SOCKET_URL, { auth: { token: newToken } });
     setSocket(s);
     if (userData?.id) {
       s.emit("join-user", userData.id);

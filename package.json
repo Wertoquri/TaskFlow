@@ -7,7 +7,15 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "install:all": "npm ci && npm ci --prefix backend",
+    "test": "npm test --prefix backend",
+    "verify": "npm run lint && npm run test && npm run build && npm audit --omit=dev && npm audit --omit=dev --prefix backend",
+    "render:build": "npm run install:all && npm run test && npm run build",
+    "render:start": "npm run start:with-migrate --prefix backend"
+  },
+  "engines": {
+    "node": ">=22 <25"
   },
   "dependencies": {
     "axios": "^1.13.2",

@@ -6,10 +6,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: 22, cache: npm }
-      - run: npm ci
-      - run: npm --prefix backend ci
-      - run: npm run lint
-      - run: npm run build
-      - run: npm --prefix backend test
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            backend/package-lock.json
+      - run: npm run install:all
+      - run: npm run verify
       - run: docker compose config

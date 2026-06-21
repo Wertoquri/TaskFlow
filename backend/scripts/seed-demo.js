@@ -12,7 +12,7 @@ async function seed() {
   const [[project]] = await pool.query("SELECT id FROM projects WHERE owner_id=? AND name='Website launch'", [user.id]);
   await pool.query("INSERT IGNORE INTO project_members (project_id,user_id,role) VALUES (?,?,'admin')", [project.id,user.id]);
   const [[count]] = await pool.query('SELECT COUNT(*) AS n FROM tasks WHERE project_id=?', [project.id]);
-  if (!count.n) await pool.query(`INSERT INTO tasks (project_id,title,description,status,priority,owner_id,created_by,labels) VALUES (?, 'Approve visual direction', 'Review the final design with stakeholders', 'todo', 'high', ?, ?, JSON_ARRAY('design')), (?, 'Prepare launch checklist', 'Validate analytics, SEO and rollback plan', 'in-progress', 'medium', ?, ?, JSON_ARRAY('release')), (?, 'Project kickoff', 'Scope and responsibilities confirmed', 'done', 'low', ?, ?, JSON_ARRAY('planning'))`, [project.id,user.id,user.id,project.id,user.id,user.id,project.id,user.id,user.id]);
+  if (!count.n) await pool.query(`INSERT INTO tasks (project_id,title,description,status,priority,owner_id,created_by,labels) VALUES (?, 'Approve visual direction', 'Review the final design with stakeholders', 'pending', 'high', ?, ?, JSON_ARRAY('design')), (?, 'Prepare launch checklist', 'Validate analytics, SEO and rollback plan', 'in_progress', 'medium', ?, ?, JSON_ARRAY('release')), (?, 'Project kickoff', 'Scope and responsibilities confirmed', 'done', 'low', ?, ?, JSON_ARRAY('planning'))`, [project.id,user.id,user.id,project.id,user.id,user.id,project.id,user.id,user.id]);
   console.log(`[demo] ${email} / ${password}`);
 }
 seed().then(()=>pool.end()).catch((error)=>{ console.error(error); process.exit(1); });

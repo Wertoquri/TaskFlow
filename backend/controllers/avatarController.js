@@ -1,6 +1,5 @@
-const fs = require('fs');
-const path = require('path');
 const { pool } = require('../db');
+const { uploadBuffer, deleteMedia } = require('../services/mediaStorage');
 
 async function uploadAvatar(req, res) {
   try {
@@ -14,44 +13,33 @@ async function uploadAvatar(req, res) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
-    const filename = req.file.filename;
-    const relPath = `/uploads/avatars/${filename}`;
-    const absPath = path.join(__dirname, '..', 'uploads', 'avatars', filename);
-
-    console.log('[uploadAvatar] file saved:', {
-      originalname: req.file.originalname,
-      filename: req.file.filename,
-      mimetype: req.file.mimetype,
-      size: req.file.size,
-      absPath
-    });
-
-    if (!fs.existsSync(absPath)) {
-      console.error('[uploadAvatar] saved file not found on disk:', absPath);
-      return res.status(500).json({ message: 'Uploaded file not found on server' });
-    }
+    const [users] = await pool.query('SELECT avatar, avatar_url FROM users WHERE id = ?', [userId]);
+    const previousAvatar = users[0]?.avatar_url || users[0]?.avatar || null;
+    const avatarUrl = await uploadBuffer(req.file, 'taskflow/avatars');
 
     // Try to update users table with avatar path; be defensive if column missing
     try {
-      await pool.query('UPDATE users SET avatar = ? WHERE id = ?', [relPath, userId]);
+      await pool.query('UPDATE users SET avatar = ? WHERE id = ?', [avatarUrl, userId]);
     } catch (e) {
       console.warn('[uploadAvatar] update avatar column failed, trying avatar_url:', e && e.message ? e.message : e);
       try {
-        await pool.query('UPDATE users SET avatar_url = ? WHERE id = ?', [relPath, userId]);
+        await pool.query('UPDATE users SET avatar_url = ? WHERE id = ?', [avatarUrl, userId]);
       } catch (e2) {
         // ignore DB update errors, return url anyway
         console.warn('Could not persist avatar to users table:', e2 && e2.message ? e2.message : e2);
       }
     }
 
-    // Return a full URL if we can construct one from env, otherwise return relative path
-    const host = process.env.PUBLIC_HOST || '';
-    const avatarUrl = host ? `${host}${relPath}` : relPath;
+    await deleteMedia(previousAvatar).catch((error) => {
+      console.warn('Previous avatar could not be removed:', error.message);
+    });
 
     res.json({ avatarUrl });
   } catch (err) {
     console.error('Upload avatar error:', err && err.stack ? err.stack : err);
-    res.status(500).json({ message: 'Server error', error: String(err) });
+    res.status(err.statusCode || 500).json({
+      message: err.statusCode ? err.message : 'Server error'
+    });
   }
 }
 

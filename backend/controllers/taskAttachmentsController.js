@@ -1,5 +1,6 @@
 const path = require('path');
 const { getQuery, run } = require('../db');
+const { uploadBuffer, deleteMedia, mediaUrl } = require('../services/mediaStorage');
 
 // POST /api/tasks/:id/attachments
 const uploadTaskAttachment = async (req, res) => {
@@ -18,13 +19,14 @@ const uploadTaskAttachment = async (req, res) => {
       return res.status(404).json({ message: 'Task not found' });
     }
     const projectId = rows[0].project_id;
+    const storedUrl = await uploadBuffer(file, 'taskflow/attachments');
 
     const insertResult = await run(
       'INSERT INTO task_attachments (task_id, uploaded_by, filename, original_name, mime_type, size) VALUES (?, ?, ?, ?, ?, ?)',
       [
         id,
         userId,
-        file.filename,
+        storedUrl,
         file.originalname,
         file.mimetype,
         file.size,
@@ -70,11 +72,11 @@ const uploadTaskAttachment = async (req, res) => {
       id: insertResult.insertId,
       task_id: Number(id),
       uploaded_by: userId,
-      filename: file.filename,
+      filename: storedUrl,
       original_name: file.originalname,
       mime_type: file.mimetype,
       size: file.size,
-      url: `/uploads/tasks/${file.filename}`,
+      url: storedUrl,
     };
 
     // Log activity: attachment added (non-fatal)
@@ -130,7 +132,7 @@ const getTaskAttachments = async (req, res) => {
     );
     const enriched = rows.map((a) => ({
       ...a,
-      url: `/uploads/tasks/${a.filename}`,
+      url: mediaUrl(a.filename, 'tasks'),
     }));
     res.json(enriched);
   } catch (err) {
@@ -157,8 +159,14 @@ const deleteTaskAttachment = async (req, res) => {
       return res.status(404).json({ message: 'Attachment not found' });
     }
     const filename = rows[0].filename;
-    const filePath = path.join(__dirname, '..', 'uploads', 'tasks', filename);
-    try { fs.unlinkSync(filePath); } catch {}
+    if (/^https?:\/\//i.test(filename)) {
+      await deleteMedia(filename).catch((error) => {
+        console.warn('Attachment media could not be removed:', error.message);
+      });
+    } else {
+      const filePath = path.join(__dirname, '..', 'uploads', 'tasks', filename);
+      try { fs.unlinkSync(filePath); } catch {}
+    }
 
     await run('DELETE FROM task_attachments WHERE id = ?', [attachmentId]);
 
@@ -214,7 +222,9 @@ const deleteTaskAttachment = async (req, res) => {
     res.json({ message: 'Attachment deleted' });
   } catch (err) {
     console.error('Delete task attachment error:', err);
-    res.status(500).json({ message: 'Server error', error: err });
+    res.status(err.statusCode || 500).json({
+      message: err.statusCode ? err.message : 'Server error'
+    });
   }
 };
 
