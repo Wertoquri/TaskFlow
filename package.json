@@ -11,7 +11,7 @@
     "install:all": "npm ci && npm ci --prefix backend",
     "test": "npm test --prefix backend",
     "verify": "npm run lint && npm run test && npm run build && npm audit --omit=dev && npm audit --omit=dev --prefix backend",
-    "render:build": "npm run install:all && npm run test && npm run build",
+    "render:build": "npm ci --include=dev && npm ci --include=dev --prefix backend && npm run test && npm run build",
     "render:start": "npm run start:with-migrate --prefix backend"
   },
   "engines": {
