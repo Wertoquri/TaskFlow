@@ -1,4 +1,6 @@
 const nodemailer = require('nodemailer');
+const dns = require('node:dns').promises;
+const net = require('node:net');
 
 function getSmtpConfig() {
   const port = Number(process.env.EMAIL_PORT || 587);
@@ -16,9 +18,19 @@ function getSmtpConfig() {
   };
 }
 
-function createTransporter(config) {
+async function createTransporter(config) {
+  let connectionHost = config.host;
+
+  if (!net.isIP(config.host)) {
+    const ipv4Addresses = await dns.resolve4(config.host);
+    if (!ipv4Addresses.length) {
+      throw new Error(`No IPv4 address found for SMTP host ${config.host}`);
+    }
+    connectionHost = ipv4Addresses[0];
+  }
+
   return nodemailer.createTransport({
-    host: config.host,
+    host: connectionHost,
     port: config.port,
     secure: config.secure,
     auth: {
@@ -28,6 +40,9 @@ function createTransporter(config) {
     connectionTimeout: 10_000,
     greetingTimeout: 10_000,
     socketTimeout: 15_000,
+    tls: {
+      servername: net.isIP(config.host) ? undefined : config.host,
+    },
   });
 }
 
@@ -76,7 +91,8 @@ async function sendVerificationEmail(email, code) {
   };
 
   try {
-    await createTransporter(config).sendMail(mailOptions);
+    const transporter = await createTransporter(config);
+    await transporter.sendMail(mailOptions);
     return true;
   } catch (error) {
     console.error('Failed to send verification email:', error?.message || error);
@@ -97,7 +113,8 @@ async function verifySmtp() {
   }
 
   try {
-    await createTransporter(config).verify();
+    const transporter = await createTransporter(config);
+    await transporter.verify();
     return { ok: true, secure: config.secure, host: config.host, port: config.port };
   } catch (error) {
     return {
