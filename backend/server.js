@@ -121,16 +121,37 @@ const io = new Server(server, {
 });
 app.set('io', io);
 
+io.use((socket, next) => {
+    const token = socket.handshake.auth?.token;
+    if (!token) return next(new Error('Unauthorized'));
+    jwt.verify(token, process.env.JWT_SECRET, (error, decoded) => {
+        if (error || !decoded?.id) return next(new Error('Unauthorized'));
+        socket.user = decoded;
+        next();
+    });
+});
+
 io.on('connection', (socket) => {
-    // Join project rooms and user personal room
-    socket.on('join-project', (projectId) => {
-        socket.join(`project:${projectId}`);
+    socket.join(`user:${socket.user.id}`);
+
+    socket.on('join-project', async (projectId) => {
+        const parsedProjectId = Number(projectId);
+        if (!Number.isInteger(parsedProjectId) || parsedProjectId <= 0) return;
+        try {
+            const membership = await getQuery(
+                'SELECT 1 FROM project_members WHERE project_id = ? AND user_id = ?',
+                [parsedProjectId, socket.user.id]
+            );
+            if (membership.length) socket.join(`project:${parsedProjectId}`);
+        } catch (error) {
+            console.error('Socket project authorization failed:', error?.message || error);
+        }
     });
     socket.on('leave-project', (projectId) => {
-        socket.leave(`project:${projectId}`);
-    });
-    socket.on('join-user', (userId) => {
-        socket.join(`user:${userId}`);
+        const parsedProjectId = Number(projectId);
+        if (Number.isInteger(parsedProjectId) && parsedProjectId > 0) {
+            socket.leave(`project:${parsedProjectId}`);
+        }
     });
     socket.on('disconnect', () => {});
 });
