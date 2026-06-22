@@ -16,7 +16,19 @@ services:
       - key: JWT_SECRET
         generateValue: true
       - key: EMAIL_MODE
-        value: console
+        value: smtp
+      - key: EMAIL_HOST
+        value: smtp.gmail.com
+      - key: EMAIL_PORT
+        value: "587"
+      - key: EMAIL_SECURE
+        value: "false"
+      - key: EMAIL_USER
+        sync: false
+      - key: EMAIL_PASS
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
       - key: DEMO_SEED
         value: "true"
       - key: DEMO_EMAIL
