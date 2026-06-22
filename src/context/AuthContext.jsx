@@ -60,15 +60,19 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  useEffect(() => {
+    if (!token || isTokenExpired(token)) return;
+    const nextSocket = io(SOCKET_URL, { auth: { token } });
+    setSocket(nextSocket);
+    return () => {
+      nextSocket.disconnect();
+      setSocket(null);
+    };
+  }, [token]);
+
   const login = (newToken, userData) => {
     localStorage.setItem("token", newToken);
     setToken(newToken);
-    // connect socket and join user room
-    const s = io(SOCKET_URL, { auth: { token: newToken } });
-    setSocket(s);
-    if (userData?.id) {
-      s.emit("join-user", userData.id);
-    }
     // fetch user via /me after setting token
     (async () => {
       try {
