@@ -56,6 +56,36 @@ async function sendVerificationEmail(email, code) {
     return true;
   }
 
+  if (process.env.EMAIL_API_URL && process.env.EMAIL_API_SECRET) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15_000);
+
+    try {
+      const response = await fetch(process.env.EMAIL_API_URL, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          secret: process.env.EMAIL_API_SECRET,
+          to: email,
+          code,
+        }),
+        signal: controller.signal,
+      });
+      const result = await response.json().catch(() => null);
+
+      if (!response.ok || result?.ok !== true) {
+        throw new Error(`Email API returned ${response.status}`);
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Verification email API failed:', error?.message || error);
+      return false;
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
   const config = getSmtpConfig();
   if (!config.user || !config.pass || !config.from) {
     console.error('SMTP is not configured: EMAIL_USER, EMAIL_PASS and EMAIL_FROM are required.');
