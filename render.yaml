@@ -17,6 +17,10 @@ services:
         generateValue: true
       - key: EMAIL_MODE
         value: smtp
+      - key: EMAIL_API_URL
+        sync: false
+      - key: EMAIL_API_SECRET
+        sync: false
       - key: EMAIL_HOST
         value: smtp.gmail.com
       - key: EMAIL_PORT
