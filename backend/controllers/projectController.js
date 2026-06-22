@@ -37,7 +37,7 @@ const createProject = async (req, res) => {
         const result = await run(query, [name, description || null, ownerId]);
         // Ensure creator is also a project member with admin role for permission checks
         await run(
-            'INSERT IGNORE INTO project_members (project_id, user_id, role) VALUES (?, ?, "admin")',
+            "INSERT INTO project_members (project_id, user_id, role) VALUES (?, ?, 'admin') ON CONFLICT (project_id, user_id) DO NOTHING",
             [result.insertId, ownerId]
         );
         res.status(201).json({ message: 'Project created', projectId: result.insertId });

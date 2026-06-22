@@ -4,7 +4,6 @@ const dotenv = require('dotenv');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
-const mysql = require('mysql2/promise');
 const http = require('http');
 const { Server } = require('socket.io');
 const multer = require('multer');
@@ -63,19 +62,10 @@ const authenticate = require('./middleware/authenticate');
 const { getQuery, run, pool } = require('./db');
 app.get('/api/me', authenticate, async (req, res) => {
     try {
-        // Defensive select: some deployments may not have `avatar` or `avatar_url` columns.
-        const cols = await getQuery(
-          `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'users'`,
-          [process.env.DB_NAME]
+        const rows = await getQuery(
+          'SELECT id, username, email, nickname, avatar, avatar_url FROM users WHERE id = ?',
+          [req.user.id]
         );
-        const colSet = new Set((cols || []).map((c) => c.COLUMN_NAME));
-        const fields = ['id', 'username', 'email'];
-        if (colSet.has('nickname')) fields.push('nickname');
-        if (colSet.has('avatar')) fields.push('avatar');
-        if (colSet.has('avatar_url')) fields.push('avatar_url');
-        const q = `SELECT ${fields.join(', ')} FROM users WHERE id = ?`;
-        console.log('[debug] /api/me selecting fields:', fields.join(', '));
-        const rows = await getQuery(q, [req.user.id]);
         if (!rows || rows.length === 0) return res.status(404).json({ message: 'User not found' });
         res.json(rows[0]);
     } catch (err) {
@@ -98,22 +88,8 @@ app.get('/api/health', async (req, res) => {
 });
 
 // MySQL config (з .env)
-const dbConfig = {
-    host: process.env.DB_HOST,
-    port: Number(process.env.DB_PORT || 3306),
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-    ...(process.env.DB_SSL === 'true'
-        ? { ssl: { minVersion: 'TLSv1.2', rejectUnauthorized: true } }
-        : {})
-};
 
 // Функція отримання з'єднання
-async function getConnection() {
-    const connection = await mysql.createConnection(dbConfig);
-    return connection;
-}
 
 // Тестовий маршрут
 if (!isProduction) {
@@ -169,8 +145,8 @@ setInterval(async () => {
     try {
         const result = await run(
             `DELETE FROM users 
-             WHERE is_verified = 0 
-             AND created_at < (NOW() - INTERVAL 24 HOUR)`
+             WHERE is_verified = FALSE
+             AND created_at < (NOW() - INTERVAL '24 hours')`
         );
         if (result && result.affectedRows) {
             console.log(`[cleanup] Видалено непідтверджених користувачів: ${result.affectedRows}`);

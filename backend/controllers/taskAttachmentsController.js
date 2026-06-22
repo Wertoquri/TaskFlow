@@ -40,7 +40,7 @@ const uploadTaskAttachment = async (req, res) => {
       try {
         const schema = process.env.DB_NAME;
         const rowsInfo = await getQuery(
-          'SELECT COUNT(*) AS cnt FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = "tasks" AND COLUMN_NAME = "attachments_count"',
+          "SELECT COUNT(*) AS cnt FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'tasks' AND column_name = 'attachments_count'",
           [schema]
         );
         attachmentsCountEnabled = !!(rowsInfo[0] && rowsInfo[0].cnt);

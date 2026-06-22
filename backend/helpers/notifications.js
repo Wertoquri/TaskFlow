@@ -10,7 +10,7 @@ const { run } = require('../db');
 async function createNotification(userId, type, payload, io = null) {
     try {
         const result = await run(
-            'INSERT INTO notifications (user_id, type, payload, is_read) VALUES (?, ?, ?, 0)',
+            'INSERT INTO notifications (user_id, type, payload, is_read) VALUES (?, ?, ?, FALSE)',
             [userId, type, JSON.stringify(payload)]
         );
         
