@@ -179,26 +179,23 @@ const resendCode = async (req, res) => {
       return res.status(429).json({ message: `Перевищено ліміт. Спробуйте через ${minutesLeft} хв.` });
     }
 
-    // 60с cooldown зберігаємо у verify_reset_at як простий таймер
-    const shortCooldown = new Date(now.getTime() + 60 * 1000);
-    if (user.verify_reset_at && now < new Date(user.verify_reset_at)) {
-      const seconds = Math.ceil((new Date(user.verify_reset_at) - now) / 1000);
-      return res.status(429).json({ message: `Зачекайте ${seconds}s перед наступною відправкою` });
-    }
-
     const verificationCode = generateVerificationCode();
     const codeExpiry = new Date(Date.now() + 15 * 60 * 1000);
     count += 1;
 
     await pool.query(
-      'UPDATE users SET verification_code = ?, code_expiry = ?, resend_count = ?, resend_reset_at = ?, verify_reset_at = ? WHERE id = ?',
-      [verificationCode, codeExpiry, count, resetAt, shortCooldown, userId]
+      'UPDATE users SET verification_code = ?, code_expiry = ?, resend_count = ?, resend_reset_at = ? WHERE id = ?',
+      [verificationCode, codeExpiry, count, resetAt, userId]
     );
 
     const emailSent = await sendVerificationEmail(user.email, verificationCode);
     if (!emailSent) return res.status(500).json({ message: 'Помилка надсилання email' });
 
-    res.json({ message: 'Новий код надіслано на вашу пошту' });
+    res.json({
+      message: 'Новий код надіслано на вашу пошту',
+      retryAfter: 60,
+      ...(process.env.EMAIL_MODE === 'console' ? { verificationCode } : {})
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Помилка повторного надсилання коду' });

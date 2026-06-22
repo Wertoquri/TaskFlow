@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { registerUser } from '../api';
 import VerifyEmail from './VerifyEmail';
@@ -14,6 +14,7 @@ const Register = () => {
   const [error, setError] = useState('');
   const [needsVerification, setNeedsVerification] = useState(false);
   const [userId, setUserId] = useState(null);
+  const [demoCode, setDemoCode] = useState('');
   // Captcha removed
   const navigate = useNavigate();
 
@@ -58,6 +59,7 @@ const Register = () => {
     try {
       const response = await registerUser(username, email, password);
       setUserId(response.userId);
+      setDemoCode(response.verificationCode || '');
       setNeedsVerification(true);
     } catch (error) {
       setError(error.response?.data?.message || t('registerError'));
@@ -74,7 +76,7 @@ const Register = () => {
   };
 
   if (needsVerification) {
-    return <VerifyEmail userId={userId} email={email} onVerified={handleVerified} />;
+    return <VerifyEmail userId={userId} email={email} onVerified={handleVerified} demoCode={demoCode} />;
   }
 
   const passwordStrength = () => {
