@@ -1,18 +1,46 @@
 const bcrypt = require('bcryptjs');
 require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env') });
-const { pool } = require('../db');
+const { nativePool } = require('../db');
+
 async function seed() {
   if (process.env.DEMO_SEED !== 'true') return;
   const email = process.env.DEMO_EMAIL || 'demo@taskflow.local';
   const password = process.env.DEMO_PASSWORD || 'DemoPass123';
   const hash = await bcrypt.hash(password, 10);
-  await pool.query(`INSERT INTO users (username,email,password,is_verified) VALUES ('demo',?,?,1) ON DUPLICATE KEY UPDATE password=VALUES(password),is_verified=1`, [email, hash]);
-  const [[user]] = await pool.query('SELECT id FROM users WHERE email=?', [email]);
-  await pool.query(`INSERT INTO projects (name,description,owner_id) SELECT 'Website launch','Client-ready demo workspace',? WHERE NOT EXISTS (SELECT 1 FROM projects WHERE owner_id=? AND name='Website launch')`, [user.id, user.id]);
-  const [[project]] = await pool.query("SELECT id FROM projects WHERE owner_id=? AND name='Website launch'", [user.id]);
-  await pool.query("INSERT IGNORE INTO project_members (project_id,user_id,role) VALUES (?,?,'admin')", [project.id,user.id]);
-  const [[count]] = await pool.query('SELECT COUNT(*) AS n FROM tasks WHERE project_id=?', [project.id]);
-  if (!count.n) await pool.query(`INSERT INTO tasks (project_id,title,description,status,priority,owner_id,created_by,labels) VALUES (?, 'Approve visual direction', 'Review the final design with stakeholders', 'pending', 'high', ?, ?, JSON_ARRAY('design')), (?, 'Prepare launch checklist', 'Validate analytics, SEO and rollback plan', 'in_progress', 'medium', ?, ?, JSON_ARRAY('release')), (?, 'Project kickoff', 'Scope and responsibilities confirmed', 'done', 'low', ?, ?, JSON_ARRAY('planning'))`, [project.id,user.id,user.id,project.id,user.id,user.id,project.id,user.id,user.id]);
-  console.log(`[demo] ${email} / ${password}`);
+  const userResult = await nativePool.query(
+    `INSERT INTO users (username, email, password, is_verified)
+     VALUES ('demo', $1, $2, TRUE)
+     ON CONFLICT (email) DO UPDATE SET password = EXCLUDED.password, is_verified = TRUE
+     RETURNING id`,
+    [email, hash]
+  );
+  const userId = userResult.rows[0].id;
+  const projectResult = await nativePool.query(
+    `INSERT INTO projects (name, description, owner_id)
+     SELECT 'Website launch', 'Client-ready demo workspace', $1
+     WHERE NOT EXISTS (SELECT 1 FROM projects WHERE owner_id = $1 AND name = 'Website launch')
+     RETURNING id`,
+    [userId]
+  );
+  const projectId = projectResult.rows[0]?.id || (await nativePool.query(
+    "SELECT id FROM projects WHERE owner_id = $1 AND name = 'Website launch'",
+    [userId]
+  )).rows[0].id;
+  await nativePool.query(
+    "INSERT INTO project_members (project_id, user_id, role) VALUES ($1, $2, 'admin') ON CONFLICT (project_id, user_id) DO NOTHING",
+    [projectId, userId]
+  );
+  const count = Number((await nativePool.query('SELECT COUNT(*) AS n FROM tasks WHERE project_id = $1', [projectId])).rows[0].n);
+  if (!count) {
+    await nativePool.query(
+      `INSERT INTO tasks (project_id, title, description, status, priority, owner_id, created_by, labels) VALUES
+       ($1, 'Approve visual direction', 'Review the final design with stakeholders', 'pending', 'high', $2, $2, '["design"]'::jsonb),
+       ($1, 'Prepare launch checklist', 'Validate analytics, SEO and rollback plan', 'in_progress', 'medium', $2, $2, '["release"]'::jsonb),
+       ($1, 'Project kickoff', 'Scope and responsibilities confirmed', 'done', 'low', $2, $2, '["planning"]'::jsonb)`,
+      [projectId, userId]
+    );
+  }
+  console.log(`[demo] ${email}`);
 }
-seed().then(()=>pool.end()).catch((error)=>{ console.error(error); process.exit(1); });
+
+seed().then(() => nativePool.end()).catch((error) => { console.error(error); process.exit(1); });

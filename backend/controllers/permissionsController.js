@@ -25,7 +25,7 @@ async function updatePermissions(req, res) {
     const me = await getQuery('SELECT role FROM project_members WHERE project_id = ? AND user_id = ?', [projectId, requesterId]);
     if (!me.length || me[0].role !== 'admin') return res.status(403).json({ message: 'Admin only' });
     // apply shared default permissions for members
-    await run('UPDATE project_members SET permissions = ? WHERE project_id = ? AND role = "member" AND (permissions IS NULL)', [JSON.stringify(permissions), projectId]);
+    await run("UPDATE project_members SET permissions = ? WHERE project_id = ? AND role = 'member' AND permissions IS NULL", [JSON.stringify(permissions), projectId]);
     res.json({ message: 'Default member permissions updated' });
   } catch (e) { res.status(500).json({ message: 'Server error' }); }
 }

@@ -13,9 +13,9 @@ docker compose up --build
 Open http://localhost:3000 and sign in with:
 
 - Email: `demo@taskflow.local`
-- Password: `DemoPass123`
+- Password: `TaskFlowDemo2026!`
 
-The container creates the MySQL schema and a populated demo workspace automatically. SMTP is replaced by a console mailer in demo mode; production SMTP remains configurable.
+The container creates the PostgreSQL schema and a populated demo workspace automatically. SMTP is replaced by a console mailer in demo mode; production SMTP remains configurable.
 
 ## Demo walkthrough
 
@@ -32,12 +32,12 @@ React/Vite + Socket.IO client
            | REST / WebSocket
 Express API + JWT
      |            |
-TiDB/MySQL    Cloudinary media
+PostgreSQL    Cloudinary media
 ```
 
 ## Local development
 
-Prerequisites: Node.js 22 and MySQL 8.
+Prerequisites: Node.js 22 and PostgreSQL 16.
 
 ```bash
 cp .env.example .env
@@ -54,7 +54,7 @@ Frontend: http://localhost:3000. API health: http://localhost:5000/api/health.
 
 The repository includes `render.yaml` for a single public Render URL. In production, Express serves both the API and the built React application, including SPA routes and Socket.IO.
 
-1. Create a free TiDB Cloud Starter database and copy its host, port, username, password and database name.
+1. Create a free Neon Postgres project and copy its pooled connection string.
 2. Create a free Cloudinary account and copy `CLOUDINARY_URL`.
 3. Open this repository as a Render Blueprint.
 4. Fill the secret variables marked `sync: false` in the Render dashboard.
@@ -63,12 +63,7 @@ The repository includes `render.yaml` for a single public Render URL. In product
 Required production variables:
 
 ```env
-DB_HOST=
-DB_PORT=4000
-DB_USER=
-DB_PASSWORD=
-DB_NAME=
-DB_SSL=true
+DATABASE_URL=postgresql://...
 JWT_SECRET=
 DEMO_PASSWORD=
 CLOUDINARY_URL=
@@ -98,6 +93,6 @@ GitHub Actions runs the same checks for every pull request and push to `main`.
 
 ## Technology
 
-React 19, Vite, Express 5, Socket.IO, MySQL/TiDB, Cloudinary, JWT, Nodemailer and Docker Compose.
+React 19, Vite, Express 5, Socket.IO, PostgreSQL/Neon, Cloudinary, JWT, Nodemailer and Docker Compose.
 
 MIT licensed.

@@ -9,9 +9,9 @@ async function createInvitation(req, res) {
     const users = await getQuery('SELECT id FROM users WHERE email = ?', [email]);
     if (!users.length) return res.status(404).json({ message: 'User not found' });
     const recipientId = users[0].id;
-    const existing = await getQuery('SELECT id FROM invitations WHERE project_id = ? AND recipient_user_id = ? AND status = "pending"', [projectId, recipientId]);
+    const existing = await getQuery("SELECT id FROM invitations WHERE project_id = ? AND recipient_user_id = ? AND status = 'pending'", [projectId, recipientId]);
     if (existing.length) return res.status(400).json({ message: 'Invitation already pending' });
-    const result = await run('INSERT INTO invitations (project_id, sender_id, recipient_user_id, status) VALUES (?, ?, ?, "pending")', [projectId, senderId, recipientId]);
+    const result = await run("INSERT INTO invitations (project_id, sender_id, recipient_user_id, status) VALUES (?, ?, ?, 'pending')", [projectId, senderId, recipientId]);
     // notify recipient
     const io = req.app.get('io');
     
@@ -51,7 +51,7 @@ async function listMyInvitations(req, res) {
   try {
     // Avoid selecting a specific project name column due to schema differences (name/title)
     const rows = await getQuery(
-      'SELECT i.* FROM invitations i WHERE i.recipient_user_id = ? AND i.status = "pending" ORDER BY i.created_at DESC',
+      "SELECT i.* FROM invitations i WHERE i.recipient_user_id = ? AND i.status = 'pending' ORDER BY i.created_at DESC",
       [userId]
     );
     console.log('listMyInvitations result:', rows);
@@ -71,8 +71,8 @@ async function acceptInvitation(req, res) {
     const { project_id, recipient_user_id, status } = inv[0];
     if (recipient_user_id !== userId) return res.status(403).json({ message: 'Not your invitation' });
     if (status !== 'pending') return res.status(400).json({ message: 'Invitation already processed' });
-    await run('UPDATE invitations SET status = "accepted" WHERE id = ?', [invId]);
-    await run('INSERT IGNORE INTO project_members (project_id, user_id, role) VALUES (?, ?, "member")', [project_id, userId]);
+    await run("UPDATE invitations SET status = 'accepted' WHERE id = ?", [invId]);
+    await run("INSERT INTO project_members (project_id, user_id, role) VALUES (?, ?, 'member') ON CONFLICT (project_id, user_id) DO NOTHING", [project_id, userId]);
     const io = req.app.get('io');
     io && io.to(`project:${project_id}`).emit('member:joined', { user_id: userId, project_id });
     res.json({ message: 'Joined project' });
@@ -88,7 +88,7 @@ async function declineInvitation(req, res) {
     const { recipient_user_id, status } = inv[0];
     if (recipient_user_id !== userId) return res.status(403).json({ message: 'Not your invitation' });
     if (status !== 'pending') return res.status(400).json({ message: 'Invitation already processed' });
-    await run('UPDATE invitations SET status = "declined" WHERE id = ?', [invId]);
+    await run("UPDATE invitations SET status = 'declined' WHERE id = ?", [invId]);
     const io = req.app.get('io');
     io && io.to(`project:${inv[0].project_id}`).emit('invite:declined', { user_id: userId, project_id: inv[0].project_id });
     res.json({ message: 'Declined' });

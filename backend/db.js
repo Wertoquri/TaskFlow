@@ -1,36 +1,70 @@
-const mysql = require('mysql2/promise');
+const { Pool } = require('pg');
 
-const dbConfig = {
-  host: process.env.DB_HOST,
-  port: Number(process.env.DB_PORT || 3306),
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  ...(process.env.DB_SSL === 'true'
-    ? { ssl: { minVersion: 'TLSv1.2', rejectUnauthorized: true } }
-    : {})
+if (!process.env.DATABASE_URL) {
+  throw new Error('DATABASE_URL is required');
+}
+
+const nativePool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined,
+  max: Number(process.env.DB_POOL_SIZE || 10),
+});
+
+function compileQuery(query, params = []) {
+  let index = 0;
+  const values = [];
+  const text = query.replace(/`([^`]+)`/g, '"$1"').replace(/\?/g, () => {
+    const value = params[index++];
+    if (Array.isArray(value)) {
+      if (!value.length) return 'NULL';
+      return value.map((item) => {
+        values.push(item);
+        return `$${values.length}`;
+      }).join(', ');
+    }
+    values.push(value);
+    return `$${values.length}`;
+  });
+  return { text, values };
+}
+
+function normalizeRows(rows) {
+  return rows.map((row) => Object.fromEntries(Object.entries(row).map(([key, value]) => {
+    if ((key === 'cnt' || key === 'n') && typeof value === 'string' && /^\d+$/.test(value)) {
+      return [key, Number(value)];
+    }
+    return [key, value];
+  })));
+}
+
+async function execute(query, params = [], { returnId = false } = {}) {
+  let { text, values } = compileQuery(query, params);
+  const isInsert = /^\s*INSERT\b/i.test(text);
+  if (returnId && isInsert && !/\bRETURNING\b/i.test(text)) text += ' RETURNING id';
+  const result = await nativePool.query(text, values);
+  return {
+    rows: normalizeRows(result.rows || []),
+    insertId: result.rows?.[0]?.id ?? null,
+    affectedRows: result.rowCount || 0,
+  };
+}
+
+const pool = {
+  async query(query, params = []) {
+    const result = await execute(query, params, { returnId: /^\s*INSERT\b/i.test(query) });
+    if (/^\s*(SELECT|WITH)\b/i.test(query)) return [result.rows];
+    return [{ insertId: result.insertId, affectedRows: result.affectedRows }];
+  },
+  end: () => nativePool.end(),
 };
 
-// Пул підключень для контролерів, які використовують pool.query
-const pool = mysql.createPool(dbConfig);
-
-async function getConnection() {
-  return await mysql.createConnection(dbConfig);
-}
-
 async function getQuery(query, params = []) {
-  const connection = await getConnection();
-  const [rows] = await connection.query(query, params);
-  connection.end();
-  return rows;
+  return (await execute(query, params)).rows;
 }
 
-// For INSERT/UPDATE/DELETE: returns OkPacket with insertId/affectedRows
 async function run(query, params = []) {
-  const connection = await getConnection();
-  const [result] = await connection.execute(query, params);
-  connection.end();
-  return result; // OkPacket
+  const result = await execute(query, params, { returnId: /^\s*INSERT\b/i.test(query) });
+  return { insertId: result.insertId, affectedRows: result.affectedRows };
 }
 
-module.exports = { dbConfig, pool, getConnection, getQuery, run };
+module.exports = { pool, nativePool, getQuery, run };
