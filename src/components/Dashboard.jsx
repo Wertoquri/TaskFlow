@@ -171,8 +171,8 @@ export default function Dashboard() {
             <h1 className={styles.headerTitle}>{t('dashboardTitle')}</h1>
             <p className={styles.headerSubtitle}>{t('dashboardSubtitle')}</p>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ display: "flex", gap: "8px" }}>
+          <div className={styles.headerActions}>
+            <div className={styles.headerMenuGroup}>
               <NotificationsBell isOpen={openMenu === 'notifications'} onToggle={() => setOpenMenu(openMenu === 'notifications' ? null : 'notifications')} />
               <InvitationsBell isOpen={openMenu === 'invitations'} onToggle={() => setOpenMenu(openMenu === 'invitations' ? null : 'invitations')} />
               <SettingsMenu isOpen={openMenu === 'settings'} onToggle={() => setOpenMenu(openMenu === 'settings' ? null : 'settings')} />

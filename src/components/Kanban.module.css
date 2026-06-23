@@ -347,3 +347,38 @@
   opacity: 1;
   transition: transform 0s, opacity 0.45s ease;
 }
+
+@media (max-width: 900px) {
+  .container {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .column {
+    min-height: auto;
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .columnTitle {
+    font-size: 1.05rem;
+  }
+
+  .taskCard {
+    padding: 0.875rem;
+  }
+
+  .priorityRow,
+  .attachmentsRow {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .prioritySelect,
+  .labelInput,
+  .attachmentButton {
+    width: 100%;
+    box-sizing: border-box;
+  }
+}

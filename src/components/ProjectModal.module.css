@@ -1,12 +1,14 @@
 .overlay {
   position: fixed;
   inset: 0;
+  box-sizing: border-box;
   background: rgba(15, 23, 42, 0.5);
   backdrop-filter: blur(4px);
   z-index: 50;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 1rem;
   animation: fadeIn 0.2s ease-out;
 }
 
@@ -34,14 +36,14 @@
   background: white;
   border-radius: 1.25rem;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
-  min-width: 32rem;
   max-width: 36rem;
-  width: 90vw;
-  max-height: 85vh;
+  width: min(100%, 36rem);
+  max-height: calc(100dvh - 2rem);
   display: flex;
   flex-direction: column;
   overflow: hidden;
   animation: slideUp 0.3s ease-out;
+  box-sizing: border-box;
 }
 
 .header {
@@ -51,6 +53,7 @@
   padding: 1.75rem 2rem;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  gap: 1rem;
 }
 
 .title {
@@ -61,6 +64,8 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .closeIcon {
@@ -69,6 +74,7 @@
   border-radius: 0.5rem;
   width: 2rem;
   height: 2rem;
+  flex: 0 0 2rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -182,6 +188,7 @@
   padding: 1.5rem 2rem;
   background: #f8fafc;
   border-top: 1px solid #e2e8f0;
+  flex-shrink: 0;
 }
 
 .submitButton {
@@ -223,4 +230,57 @@
   background: #f8fafc;
   border-color: #cbd5e1;
   color: #475569;
+}
+
+@media (max-width: 640px) {
+  .overlay {
+    align-items: flex-end;
+    padding: 0.75rem;
+  }
+
+  .modal {
+    width: 100%;
+    max-height: calc(100dvh - 1.5rem);
+    border-radius: 1.25rem;
+  }
+
+  .header {
+    padding: 1rem 1rem 0.95rem;
+  }
+
+  .title {
+    font-size: 1.25rem;
+    line-height: 1.15;
+  }
+
+  .content {
+    padding: 1rem;
+  }
+
+  .label {
+    font-size: 0.9rem;
+  }
+
+  .input,
+  .textarea {
+    font-size: 1rem;
+    padding: 0.8rem 0.875rem;
+  }
+
+  .textarea {
+    min-height: 6.5rem;
+  }
+
+  .footer {
+    padding: 0.875rem 1rem 1rem;
+    gap: 0.625rem;
+    flex-direction: column-reverse;
+  }
+
+  .submitButton,
+  .cancelButton {
+    width: 100%;
+    min-height: 3rem;
+    padding: 0.8rem 1rem;
+  }
 }

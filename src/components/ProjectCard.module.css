@@ -7,6 +7,7 @@
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   cursor: pointer;
   transition: all 0.2s;
+  overflow: hidden;
 }
 
 .card:hover {
@@ -19,6 +20,7 @@
   color: #1d4ed8;
   font-weight: 700;
   font-size: 1.125rem;
+  overflow-wrap: anywhere;
 }
 
 .description {
@@ -26,6 +28,7 @@
   color: #334155;
   font-size: 0.875rem;
   line-height: 1.5;
+  overflow-wrap: anywhere;
 }
 
 .meta {
@@ -80,4 +83,27 @@
 
 .deleteButton:hover {
   background: #dc2626;
+}
+
+@media (max-width: 640px) {
+  .card {
+    padding: 1rem;
+  }
+
+  .card:hover {
+    transform: none;
+  }
+
+  .actions {
+    position: static;
+    opacity: 1;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+  }
+
+  .editButton,
+  .deleteButton {
+    flex: 1 1 8rem;
+    min-height: 2.5rem;
+  }
 }
