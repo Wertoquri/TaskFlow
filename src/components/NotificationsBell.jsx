@@ -135,10 +135,11 @@ export default function NotificationsBell({ isOpen, onToggle }) {
             border: "1px solid #e2e8f0",
             borderRadius: "8px",
             padding: "12px",
-            minWidth: "320px",
-            maxWidth: "400px",
+            width: "min(320px, calc(100vw - 2rem))",
+            maxWidth: "calc(100vw - 2rem)",
             maxHeight: "500px",
             overflowY: "auto",
+            boxSizing: "border-box",
             boxShadow: "0 8px 24px rgba(0,0,0,.12)",
             zIndex: 1000,
           }}

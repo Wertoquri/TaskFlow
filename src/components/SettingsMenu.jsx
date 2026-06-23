@@ -81,7 +81,9 @@ export default function SettingsMenu({ isOpen, onToggle }) {
             border: '1px solid #e2e8f0',
             borderRadius: 12,
             padding: 16,
-            minWidth: 300,
+            width: 'min(300px, calc(100vw - 2rem))',
+            maxWidth: 'calc(100vw - 2rem)',
+            boxSizing: 'border-box',
             boxShadow: '0 8px 24px rgba(0,0,0,.12)',
             zIndex: 1000
           }}

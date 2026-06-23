@@ -107,7 +107,7 @@ export default function InvitationsBell({ isOpen, onToggle }) {
         )}
       </button>
       {isOpen && (
-        <div style={{ position: "absolute", right: 0, top: "120%", background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8, padding: 8, minWidth: 260, boxShadow: "0 8px 24px rgba(0,0,0,.12)" }}>
+        <div style={{ position: "absolute", right: 0, top: "120%", background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8, padding: 8, width: "min(260px, calc(100vw - 2rem))", maxWidth: "calc(100vw - 2rem)", boxSizing: "border-box", boxShadow: "0 8px 24px rgba(0,0,0,.12)", zIndex: 1000 }}>
           <div style={{ fontWeight: 700, marginBottom: 8 }}>{t('invitationsTitle')}</div>
           {invites.length === 0 ? (
             <div style={{ color: "#64748b" }}>{t('noInvitations')}</div>
