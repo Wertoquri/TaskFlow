@@ -17,6 +17,7 @@ import ProjectChat from "./ProjectChat.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
 import { API_URL, SOCKET_URL, getProjectMembers, getProjectActivity, clearProjectActivity } from "../api";
 import io from "socket.io-client";
+import styles from "./ProjectPage.module.css";
 
 const ProjectPage = () => {
   const { id } = useParams(); // project id
@@ -166,49 +167,24 @@ const ProjectPage = () => {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", padding: "20px" }}>
+    <div className={styles.page}>
       <ProjectSocketJoin projectId={Number(id)} />
       
-      <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
-        <div style={{ 
-          background: "#fff", 
-          borderRadius: "16px", 
-          padding: "24px", 
-          marginBottom: "20px",
-          boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center"
-        }}>
-          <div>
-            <h1 style={{ margin: 0, fontSize: "28px", fontWeight: 700, color: "#1e293b" }}>📋 {t('projectLabel')} #{id}</h1>
-            <p style={{ margin: "8px 0 0 0", color: "#64748b", fontSize: "14px" }}>{t('projectManageMembersChat') || 'Керування учасниками та спілкування'}</p>
+      <div className={styles.shell}>
+        <div className={styles.hero}>
+          <div className={styles.heroCopy}>
+            <h1 className={styles.heroTitle}>📋 {t('projectLabel')} #{id}</h1>
+            <p className={styles.heroSubtitle}>{t('projectManageMembersChat') || 'Керування учасниками та спілкування'}</p>
           </div>
           <button
             onClick={() => navigate("/dashboard")}
-            style={{
-              padding: "12px 24px",
-              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-              color: "#fff",
-              border: "none",
-              borderRadius: "10px",
-              fontSize: "14px",
-              fontWeight: 600,
-              cursor: "pointer",
-              boxShadow: "0 2px 4px rgba(102,126,234,0.3)",
-              transition: "all 0.3s",
-              display: "flex",
-              alignItems: "center",
-              gap: "8px"
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-2px)"}
-            onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}
+            className={styles.backButton}
           >
             ← {t('backToDashboard') || 'Назад до Dashboard'}
           </button>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "30px" }}>
+        <div className={styles.topGrid}>
           <div>
             <InviteUserPanel projectId={Number(id)} token={token} />
           </div>
@@ -217,31 +193,21 @@ const ProjectPage = () => {
           </div>
         </div>
 
-        <div style={{ marginBottom: "30px" }}>
+        <div className={styles.chatWrap}>
           <ProjectChat projectId={Number(id)} />
         </div>
 
-        <div style={{ 
-          background: "#fff", 
-          borderRadius: "16px", 
-          padding: "24px",
-          boxShadow: "0 4px 6px rgba(0,0,0,0.1)"
-        }}>
-          <h3 style={{ margin: "0 0 20px 0", fontSize: "18px", fontWeight: 700, color: "#1e293b" }}>
+        <div className={styles.tasksCard}>
+          <h3 className={styles.sectionTitle}>
             ✅ {t('tasksTitle') || 'Завдання'}
           </h3>
 
-          <div style={{ 
-            display: "grid", 
-            gridTemplateColumns: "1fr 2fr 160px 180px minmax(120px, 220px)", 
-            gap: "20px",
-            marginBottom: "20px",
-            alignItems: "center"
-          }}>
+          <div className={styles.taskForm}>
             <input
               placeholder={t('taskTitlePlaceholder') || 'Назва'}
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
+              className={styles.field}
               style={{
                 padding: "12px",
                 border: "1px solid #e2e8f0",
@@ -253,6 +219,7 @@ const ProjectPage = () => {
               placeholder={t('taskDescPlaceholder') || 'Опис'}
               value={newDescription}
               onChange={(e) => setNewDescription(e.target.value)}
+              className={styles.field}
               style={{
                 padding: "12px",
                 border: "1px solid #e2e8f0",
@@ -264,6 +231,7 @@ const ProjectPage = () => {
               type="date"
               value={newDueDate}
               onChange={(e) => setNewDueDate(e.target.value)}
+              className={styles.field}
               style={{
                 padding: "12px",
                 border: "1px solid #e2e8f0",
@@ -271,10 +239,11 @@ const ProjectPage = () => {
                 fontSize: "14px"
               }}
             />
-            <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+            <div className={styles.taskAssigneeRow}>
               <select
                 value={assignedTo}
                 onChange={(e) => setAssignedTo(e.target.value)}
+                className={styles.taskAssigneeSelect}
                 style={{
                   padding: "10px",
                   border: "1px solid #e2e8f0",
@@ -297,89 +266,42 @@ const ProjectPage = () => {
                     setMembers(rows || []);
                   } catch {}
                 }}
-                style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#ffffff', cursor: 'pointer' }}
+                className={styles.ghostButton}
               >{t('refresh') || 'Оновити'}</button>
             </div>
             {members.length === 0 && (
               <div style={{ color: '#64748b', fontSize: 12 }}>{t('noMembers') || 'Немає учасників'}</div>
             )}
-            <div style={{ justifySelf: 'end' }}>
+            <div className={styles.addButtonWrap}>
               <button
                 onClick={addTask}
-                style={{
-                  padding: "10px 20px",
-                  background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: "8px",
-                  fontSize: "14px",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  boxShadow: "0 2px 4px rgba(102,126,234,0.3)",
-                  transition: "all 0.3s",
-                  whiteSpace: 'nowrap'
-                }}
+                className={styles.primaryButton}
               >
                 + {t('add')}
               </button>
             </div>
           </div>
 
-          <ul style={{ 
-            listStyle: "none", 
-            padding: 0, 
-            margin: 0,
-            display: "flex",
-            flexDirection: "column",
-            gap: "12px"
-          }}>
+          <ul className={styles.taskList}>
             {tasks.map((task) => (
-              <li key={task.id} style={{
-                background: "#f8fafc",
-                border: "1px solid #e2e8f0",
-                borderRadius: "12px",
-                padding: "16px",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center"
-              }}>
-                <div>
+              <li key={task.id} className={styles.taskItem}>
+                <div className={styles.taskText}>
                   <strong style={{ fontSize: "15px", color: "#1e293b" }}>{task.title}</strong>
-                  <span style={{ color: "#64748b", marginLeft: "12px", fontSize: "14px" }}>— {task.description}</span>
+                  <span className={styles.taskDescription}>— {task.description}</span>
                 </div>
-                <div style={{ display: "flex", gap: "8px" }}>
+                <div className={styles.taskActions}>
                   <button 
                     onClick={() => {
                       console.log('ProjectPage edit click', { taskId: task.id });
                       updateTask(task.id)
                     }}
-                    style={{
-                      padding: "8px 16px",
-                      background: "#10b981",
-                      color: "#fff",
-                      border: "none",
-                      borderRadius: "8px",
-                      fontSize: "13px",
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      transition: "all 0.3s"
-                    }}
+                    className={`${styles.dangerButton} ${styles.successButton}`}
                   >
                     {t('edit')}
                   </button>
                   <button
                     onClick={() => deleteTask(task.id)}
-                    style={{
-                      padding: "8px 16px",
-                      background: "#ef4444",
-                      color: "#fff",
-                      border: "none",
-                      borderRadius: "8px",
-                      fontSize: "13px",
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      transition: "all 0.3s"
-                    }}
+                    className={styles.dangerButton}
                   >
                     {t('delete')}
                   </button>
@@ -389,10 +311,10 @@ const ProjectPage = () => {
           </ul>
         </div>
         
-        <div style={{ marginTop: 20, background: "#fff", borderRadius: "16px", padding: "24px", boxShadow: "0 4px 6px rgba(0,0,0,0.06)" }}>
-          <h3 style={{ margin: "0 0 12px 0", fontSize: "18px", fontWeight: 700 }}>📝 {t('projectActivity') || 'Активність проекту'}</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+        <div className={styles.activityCard}>
+          <h3 className={styles.sectionTitle}>📝 {t('projectActivity') || 'Активність проекту'}</h3>
+          <div className={styles.activityList}>
+            <div className={styles.activityActions}>
               <button
                 onClick={async () => {
                   if (!confirm(t('clearActivityConfirm') || 'Are you sure?')) return;
@@ -405,14 +327,9 @@ const ProjectPage = () => {
                     alert(err?.response?.data?.message || err?.message || 'Failed to clear activity');
                   }
                 }}
+                className={styles.dangerButton}
                 style={{
-                  padding: '8px 12px',
-                  borderRadius: 8,
-                  border: 'none',
                   background: 'linear-gradient(90deg,#f97316,#ef4444)',
-                  color: '#fff',
-                  cursor: 'pointer',
-                  fontWeight: 600,
                 }}
               >
                 {t('clearActivity')}
@@ -463,12 +380,12 @@ const ProjectPage = () => {
               }
 
               return (
-                <div key={a.id} style={{ padding: 12, borderRadius: 8, background: '#f8fafc', display: 'grid', gridTemplateColumns: '1fr auto', alignItems: 'center', gap: 10 }}>
-                  <div>
+                <div key={a.id} className={styles.activityItem}>
+                  <div className={styles.activityBody}>
                     <div style={{ fontWeight: 700 }}>{a.username || `user:${a.user_id}`}</div>
                     <div style={{ color: '#475569', fontSize: 13 }}>{title}{body ? ` — ${body}` : ''}</div>
                   </div>
-                  <div style={{ color: '#94a3b8', fontSize: 12, textAlign: 'right' }}>{new Date(a.created_at).toLocaleString()}</div>
+                  <div className={styles.activityTime}>{new Date(a.created_at).toLocaleString()}</div>
                 </div>
               );
             })}

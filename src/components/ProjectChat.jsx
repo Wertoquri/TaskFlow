@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { useAuth } from "../context/AuthContext";
 import { getProjectMessages, sendProjectMessage, updateProjectMessage, deleteProjectMessage, API_URL } from "../api";
 import { useI18n } from "../context/I18nContext.jsx";
+import styles from "./ProjectPage.module.css";
 
 export default function ProjectChat({ projectId }) {
   const { token, user, socket } = useAuth();
@@ -118,14 +119,13 @@ export default function ProjectChat({ projectId }) {
 
   return (
     <div
+      className={`${styles.panel} ${styles.chatPanel}`}
       style={{
         background: "#fff",
         border: "none",
         borderRadius: "16px",
         padding: "24px",
         boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
-        display: "flex",
-        flexDirection: "column",
         height: "500px",
       }}
     >
@@ -134,11 +134,8 @@ export default function ProjectChat({ projectId }) {
       </h3>
 
       <div
+        className={styles.messagesPane}
         style={{
-          flex: 1,
-          overflowY: "auto",
-          marginBottom: "12px",
-          padding: "8px",
           background: "#f8fafc",
           borderRadius: "6px",
         }}
@@ -160,12 +157,12 @@ export default function ProjectChat({ projectId }) {
             const avatarSrc = avatarVal ? (avatarVal.startsWith('http') ? avatarVal : `${backendBase}${avatarVal}`) : null;
             const timeStr = new Date(msg.created_at).toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
             return (
-              <div key={msg.id} style={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start', marginBottom: 12 }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+              <div key={msg.id} className={`${styles.messageRow} ${isMe ? styles.messageRowOwn : styles.messageRowOther}`}>
+                <div className={styles.messageInner}>
                   {avatarSrc && (
                     <img src={avatarSrc} alt={msg.username || 'avatar'} style={{ width: 28, height: 28, borderRadius: 14, objectFit: 'cover', border: '2px solid #ffffff', boxShadow: '0 0 0 1px rgba(15,23,42,0.06)' }} />
                   )}
-                  <div style={{ maxWidth: '70%', padding: '10px 14px', borderRadius: 12, background: isMe ? '#3b82f6' : '#fff', color: isMe ? '#fff' : '#1e293b', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', position: 'relative' }}>
+                  <div className={`${styles.messageBubble} ${isMe ? styles.messageBubbleOwn : styles.messageBubbleOther}`}>
                     {!isMe && <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4, opacity: 0.8 }}>{msg.username || `${t('userHash')}${msg.user_id}`}</div>}
                     {isEditing ? (
                       <div>
@@ -178,7 +175,7 @@ export default function ProjectChat({ projectId }) {
                     ) : (
                       <>
                         <div style={{ fontSize: 14, wordBreak: 'break-word' }}>{msg.content}</div>
-                        <div style={{ fontSize: 11, marginTop: 4, opacity: 0.7, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div className={styles.messageMeta} style={{ fontSize: 11, marginTop: 4, opacity: 0.7 }}>
                           <span>{timeStr}</span>
                           {isMe && (
                             <div style={{ display: 'flex', gap: 6, marginLeft: 8 }}>
@@ -200,15 +197,15 @@ export default function ProjectChat({ projectId }) {
 
       <form
         onSubmit={handleSend}
-        style={{ display: "flex", gap: "8px", alignItems: "center" }}
+        className={styles.chatComposer}
       >
         <input
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder={t('messagePlaceholder')}
+          className={styles.chatInput}
           style={{
-            flex: 1,
             padding: "10px 14px",
             border: "1px solid #cbd5e1",
             borderRadius: "8px",
@@ -220,16 +217,10 @@ export default function ProjectChat({ projectId }) {
         <button
           type="submit"
           disabled={!input.trim()}
+          className={styles.primaryButton}
           style={{
-            padding: "10px 20px",
             background: input.trim() ? "#3b82f6" : "#cbd5e1",
-            color: "#fff",
-            border: "none",
-            borderRadius: "8px",
-            fontSize: "14px",
-            fontWeight: 600,
             cursor: input.trim() ? "pointer" : "not-allowed",
-            transition: "all 0.2s",
           }}
         >
           📤 {t('send')}

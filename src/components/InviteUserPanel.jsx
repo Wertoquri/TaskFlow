@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { createInvitation } from "../api";
 import { useI18n } from "../context/I18nContext.jsx";
+import styles from "./ProjectPage.module.css";
 
 export default function InviteUserPanel({ projectId, token, onSuccess }) {
   const [email, setEmail] = useState("");
@@ -34,6 +35,7 @@ export default function InviteUserPanel({ projectId, token, onSuccess }) {
 
   return (
     <div
+      className={styles.panel}
       style={{
         background: "#fff",
         border: "none",
@@ -45,8 +47,8 @@ export default function InviteUserPanel({ projectId, token, onSuccess }) {
       <h3 style={{ margin: "0 0 16px 0", fontSize: "18px", fontWeight: 700, color: "#1e293b" }}>
         {t('inviteUserTitle')}
       </h3>
-      <form onSubmit={handleInvite} style={{ display: "flex", gap: "8px", alignItems: "flex-start" }}>
-        <div style={{ flex: 1 }}>
+      <form onSubmit={handleInvite} className={styles.inviteForm}>
+        <div className={styles.inviteInputWrap}>
           <input
             type="email"
             value={email}
@@ -76,18 +78,11 @@ export default function InviteUserPanel({ projectId, token, onSuccess }) {
         <button
           type="submit"
           disabled={loading}
+          className={styles.primaryButton}
           style={{
-            padding: "10px 20px",
             background: loading ? "#94a3b8" : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-            color: "#fff",
-            border: "none",
-            borderRadius: "10px",
-            fontSize: "14px",
-            fontWeight: 600,
             cursor: loading ? "not-allowed" : "pointer",
-            whiteSpace: "nowrap",
             boxShadow: loading ? "none" : "0 2px 4px rgba(102,126,234,0.3)",
-            transition: "all 0.3s",
           }}
         >
           {loading ? t('inviting') : t('inviteBtn')}
