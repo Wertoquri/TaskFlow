@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { getProjectMembers, kickProjectMember, updateMemberPermissions } from "../api";
 import { useI18n } from "../context/I18nContext.jsx";
+import styles from "./ProjectPage.module.css";
 
 export default function MembersPanel({ projectId }) {
   const { token, user } = useAuth();
@@ -69,26 +70,22 @@ export default function MembersPanel({ projectId }) {
   }
 
   return (
-    <div style={{ 
+    <div className={styles.panel} style={{
       background: "#fff",
       border: "none",
       borderRadius: "16px",
       padding: "24px",
       boxShadow: "0 4px 6px rgba(0,0,0,0.1)"
     }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+      <div className={styles.panelHeader}>
         <h3 style={{ margin: 0, fontSize: "18px", fontWeight: 700, color: "#1e293b" }}>{t('projectMembersTitle')}</h3>
         <button 
           onClick={load} 
           disabled={loading}
+          className={styles.primaryButton}
           style={{
-            padding: "8px 16px",
             background: loading ? "#94a3b8" : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-            color: "#fff",
-            border: "none",
-            borderRadius: "8px",
             fontSize: "13px",
-            fontWeight: 600,
             cursor: loading ? "not-allowed" : "pointer",
             boxShadow: loading ? "none" : "0 2px 4px rgba(102,126,234,0.3)"
           }}
@@ -108,7 +105,7 @@ export default function MembersPanel({ projectId }) {
               const isEditing = editingId === m.user_id;
               const perms = isEditing ? tempPerms : (m.permissions || {});
               return (
-              <div key={m.user_id} style={{ 
+              <div key={m.user_id} className={`${styles.memberCard} ${isEditing ? styles.memberCardEditing : ''}`} style={{
                 padding: "24px", 
                 marginBottom: "30px",
                 borderRadius: "12px",
@@ -117,66 +114,42 @@ export default function MembersPanel({ projectId }) {
                 transition: "all 0.3s",
                 boxShadow: "0 1px 3px rgba(0,0,0,0.05)"
               }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-                  <div>
-                    <div style={{ fontWeight: 600, fontSize: "15px", color: "#1e293b", marginBottom: "4px" }}>{m.username || `${t('userHash')}${m.user_id}`}</div>
+                <div className={styles.memberTop}>
+                  <div className={styles.memberInfo}>
+                    <div className={styles.memberName}>{m.username || `${t('userHash')}${m.user_id}`}</div>
                     <div style={{ fontSize: "13px", color: "#64748b" }}>{t('roleLabel')}: {m.role || "member"}</div>
                   </div>
-                  <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                  <div className={styles.memberActions}>
                     {isEditing ? (
-                      <>
-                        <button onClick={() => onSave(m.user_id)} style={{ 
-                          background: "#10b981", 
-                          color: "#fff", 
-                          padding: "8px 16px", 
-                          border: "none", 
-                          borderRadius: "6px", 
-                          fontWeight: 600,
-                          fontSize: "13px",
-                          cursor: "pointer",
-                          transition: "all 0.3s"
+                      <div className={styles.editActions}>
+                        <button onClick={() => onSave(m.user_id)} className={`${styles.dangerButton} ${styles.successButton}`} style={{
+                          background: "#10b981",
                         }}>✓</button>
-                        <button onClick={onCancel} style={{ 
-                          background: "#ef4444", 
-                          color: "#fff", 
-                          padding: "8px 16px", 
-                          border: "none", 
-                          borderRadius: "6px",
-                          fontWeight: 600,
-                          fontSize: "13px",
-                          cursor: "pointer",
-                          transition: "all 0.3s"
+                        <button onClick={onCancel} className={styles.dangerButton} style={{
+                          background: "#ef4444",
                         }}>✕</button>
-                      </>
+                      </div>
                     ) : (
-                        <button onClick={() => onKick(m.user_id)} style={{ 
-                          color: "#fff",
+                        <button onClick={() => onKick(m.user_id)} className={styles.dangerButton} style={{
                           background: "#dc2626",
-                          padding: "8px 16px",
-                          border: "none",
-                          borderRadius: "6px",
-                          fontSize: "13px",
-                          fontWeight: 600,
-                          cursor: "pointer",
-                          transition: "all 0.3s"
                         }}>{t('kick')} 🗑️</button>
                     )}
                   </div>
                 </div>
-                <div style={{ display: "flex", gap: "20px", alignItems: "center", flexWrap: "wrap", paddingTop: "12px", borderTop: "1px solid #e2e8f0" }}>
-                  <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", whiteSpace: "nowrap" }}>
+                <div className={styles.permissionsGrid}>
+                  <label className={styles.permissionLabel}>
                     <input type="checkbox" checked={!!(perms.can_create)} onChange={() => onToggle(m.user_id, 'can_create')} /> {t('permCreate')}
                   </label>
-                  <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", whiteSpace: "nowrap" }}>
+                  <label className={styles.permissionLabel}>
                     <input type="checkbox" checked={!!(perms.can_edit)} onChange={() => onToggle(m.user_id, 'can_edit')} /> {t('permEdit')}
                   </label>
-                  <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", whiteSpace: "nowrap" }}>
+                  <label className={styles.permissionLabel}>
                     <input type="checkbox" checked={!!(perms.can_delete)} onChange={() => onToggle(m.user_id, 'can_delete')} /> {t('permDelete')}
                   </label>
-                  <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", whiteSpace: "nowrap" }}>
+                  <label className={styles.permissionLabel}>
                     <input type="checkbox" checked={!!(perms.can_assign)} onChange={() => onToggle(m.user_id, 'can_assign')} /> {t('permAssign')}
                   </label>
-                  <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", whiteSpace: "nowrap" }}>
+                  <label className={styles.permissionLabel}>
                     <input type="checkbox" checked={!!(perms.can_comment)} onChange={() => onToggle(m.user_id, 'can_comment')} /> {t('permComment')}
                   </label>
                 </div>
