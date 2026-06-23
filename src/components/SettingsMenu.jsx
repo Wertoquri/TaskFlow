@@ -2,11 +2,13 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useI18n } from '../context/I18nContext.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { deleteMyAccount } from '../api.js';
+import useMobileMenuPosition from './useMobileMenuPosition.js';
 
 export default function SettingsMenu({ isOpen, onToggle }) {
   const { t, language, setLanguage } = useI18n();
   const { logout } = useAuth();
   const ref = useRef(null);
+  const { triggerRef, menuStyle } = useMobileMenuPosition(isOpen, { maxWidth: 340 });
   const [confirming, setConfirming] = useState(false);
   const [loading, setLoading] = useState(false);
   
@@ -37,8 +39,9 @@ export default function SettingsMenu({ isOpen, onToggle }) {
   }
 
   return (
-    <div style={{ position: 'relative' }}>
+    <div ref={ref} style={{ position: 'relative' }}>
       <button
+        ref={triggerRef}
         onClick={onToggle}
         aria-label={t('settings')}
         title={t('settings')}
@@ -72,7 +75,6 @@ export default function SettingsMenu({ isOpen, onToggle }) {
 
       {isOpen && (
         <div
-          ref={ref}
           style={{
             position: 'absolute',
             right: 0,
@@ -85,7 +87,8 @@ export default function SettingsMenu({ isOpen, onToggle }) {
             maxWidth: 'calc(100vw - 2rem)',
             boxSizing: 'border-box',
             boxShadow: '0 8px 24px rgba(0,0,0,.12)',
-            zIndex: 1000
+            zIndex: 1000,
+            ...menuStyle
           }}
         >
           <div style={{ fontWeight: 700, color: '#0f172a', marginBottom: 12 }}>{t('settings')}</div>

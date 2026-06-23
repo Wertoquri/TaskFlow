@@ -3,12 +3,14 @@ import { useAuth } from "../context/AuthContext";
 import { getMyInvitations, acceptInvitation, declineInvitation } from "../api";
 import { useI18n } from "../context/I18nContext.jsx";
 import ProjectInviteCard from "./ProjectInviteCard.jsx";
+import useMobileMenuPosition from "./useMobileMenuPosition.js";
 
 export default function InvitationsBell({ isOpen, onToggle }) {
   const { token, user, socket } = useAuth();
   const [invites, setInvites] = useState([]);
   const { t } = useI18n();
   const rootRef = useRef(null);
+  const { triggerRef, menuStyle } = useMobileMenuPosition(isOpen, { maxWidth: 320 });
 
   async function load() {
     if (!token) return;
@@ -63,6 +65,7 @@ export default function InvitationsBell({ isOpen, onToggle }) {
   return (
     <div style={{ position: "relative" }} ref={rootRef}>
       <button 
+        ref={triggerRef}
         title={t('invitationsTitle')} 
         onClick={onToggle}
         style={{
@@ -107,7 +110,7 @@ export default function InvitationsBell({ isOpen, onToggle }) {
         )}
       </button>
       {isOpen && (
-        <div style={{ position: "absolute", right: 0, top: "120%", background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8, padding: 8, width: "min(260px, calc(100vw - 2rem))", maxWidth: "calc(100vw - 2rem)", boxSizing: "border-box", boxShadow: "0 8px 24px rgba(0,0,0,.12)", zIndex: 1000 }}>
+        <div style={{ position: "absolute", right: 0, top: "120%", background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8, padding: 8, width: "min(260px, calc(100vw - 2rem))", maxWidth: "calc(100vw - 2rem)", boxSizing: "border-box", boxShadow: "0 8px 24px rgba(0,0,0,.12)", zIndex: 1000, ...menuStyle }}>
           <div style={{ fontWeight: 700, marginBottom: 8 }}>{t('invitationsTitle')}</div>
           {invites.length === 0 ? (
             <div style={{ color: "#64748b" }}>{t('noInvitations')}</div>

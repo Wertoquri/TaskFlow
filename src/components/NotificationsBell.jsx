@@ -4,12 +4,14 @@ import { getNotifications, markNotificationAsRead, markAllNotificationsAsRead, d
 import { useI18n } from "../context/I18nContext.jsx";
 import NotificationCard from "./NotificationCard.jsx";
 import ProjectInviteCard from "./ProjectInviteCard.jsx";
+import useMobileMenuPosition from "./useMobileMenuPosition.js";
 
 export default function NotificationsBell({ isOpen, onToggle }) {
   const { token, socket } = useAuth();
   const [notifications, setNotifications] = useState([]);
   const { t } = useI18n();
   const rootRef = useRef(null);
+  const { triggerRef, menuStyle } = useMobileMenuPosition(isOpen, { maxWidth: 360 });
 
   async function load() {
     if (!token) return;
@@ -82,6 +84,7 @@ export default function NotificationsBell({ isOpen, onToggle }) {
   return (
     <div style={{ position: "relative" }} ref={rootRef}>
       <button
+        ref={triggerRef}
         title={t('notificationsTitle')}
         onClick={onToggle}
         style={{
@@ -142,6 +145,7 @@ export default function NotificationsBell({ isOpen, onToggle }) {
             boxSizing: "border-box",
             boxShadow: "0 8px 24px rgba(0,0,0,.12)",
             zIndex: 1000,
+            ...menuStyle,
           }}
         >
           <div
