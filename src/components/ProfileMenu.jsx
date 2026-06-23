@@ -3,12 +3,14 @@ import { useAuth } from "../context/AuthContext";
 import { uploadAvatar, API_URL as API_BASE_URL } from "../api";
 import styles from "./ProfileMenu.module.css";
 import { useI18n } from "../context/I18nContext.jsx";
+import useMobileMenuPosition from "./useMobileMenuPosition.js";
 
 export default function ProfileMenu({ isOpen, onToggle }) {
   const { user, logout, refreshUser, token } = useAuth();
   const ref = useRef(null);
   const { t } = useI18n();
   const [uploading, setUploading] = useState(false);
+  const { triggerRef, menuStyle } = useMobileMenuPosition(isOpen, { maxWidth: 320 });
 
   useEffect(() => {
     if (!isOpen) return;
@@ -22,6 +24,7 @@ export default function ProfileMenu({ isOpen, onToggle }) {
   return (
     <div ref={ref} className={styles.container}>
       <button
+        ref={triggerRef}
         aria-label={t('profile')}
         onClick={onToggle}
         className={styles.button}
@@ -37,7 +40,7 @@ export default function ProfileMenu({ isOpen, onToggle }) {
         )}
       </button>
       {isOpen && (
-        <div className={styles.dropdown}>
+        <div className={styles.dropdown} style={menuStyle || undefined}>
           <div className={styles.dropdownTitle}>{t('profile')}</div>
           {!user ? (
             <div className={styles.loading}>{t('loading')}</div>

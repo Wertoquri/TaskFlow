@@ -10,7 +10,7 @@
   padding: 1.5rem;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   position: relative;
-  z-index: 100;
+  z-index: 2000;
 }
 
 .headerContent {
@@ -253,17 +253,17 @@
     width: 100%;
     justify-content: space-between;
     gap: 0.5rem;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    position: relative;
+    z-index: 2001;
   }
 
   .headerMenuGroup {
     flex: 1;
-    overflow-x: auto;
-    padding-bottom: 0.15rem;
-    scrollbar-width: none;
-  }
-
-  .headerMenuGroup::-webkit-scrollbar {
-    display: none;
+    flex-wrap: wrap;
+    overflow: visible;
+    padding-bottom: 0;
   }
 
   .content {
