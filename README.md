@@ -97,7 +97,7 @@ GitHub Actions runs the same checks for every pull request and push to `main`.
 
 - Secrets are supplied only through environment variables.
 - Passwords are hashed with bcrypt and authenticated endpoints require JWT.
-- Password recovery is available from the sign-in page: an eight-digit email code expires after 15 minutes, allows five attempts and is issued at most once per minute. Resetting the password revokes previous JWT sessions. Configure SMTP or an HTTPS email relay for delivery; relay implementations should recognize `purpose: "password-reset"` to render the correct message.
+- Password recovery is available from the sign-in page: a six-digit email code expires after 15 minutes, allows five attempts and is issued at most once per minute. Resetting the password revokes previous JWT sessions. Configure SMTP or an HTTPS email relay for delivery. The HTTPS relay receives the same code payload as account verification for compatibility; SMTP sends a password-reset-specific message.
 - `EMAIL_MODE=console` and seeded credentials are intended only for local demonstrations.
 - Production requires a unique `JWT_SECRET`; media is stored outside the ephemeral app filesystem.
 

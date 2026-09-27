@@ -310,7 +310,7 @@ const forgotPassword = async (req, res) => {
   const genericMessage =
     "Якщо акаунт із цією адресою існує, код для скидання надіслано на пошту.";
   try {
-    const code = randomInt(0, 100_000_000).toString().padStart(8, "0");
+    const code = randomInt(100_000, 1_000_000).toString();
     const codeHash = hashResetCode(email, code);
     const result = await nativePool.query(
       `UPDATE users SET reset_code_hash = $1, reset_expires_at = NOW() + INTERVAL '15 minutes',
@@ -323,6 +323,7 @@ const forgotPassword = async (req, res) => {
     if (result.rowCount) {
       const sent = await sendPasswordResetEmail(result.rows[0].email, code);
       if (!sent) {
+        console.error("Password reset email delivery failed");
         await nativePool.query(
           "UPDATE users SET reset_code_hash = NULL, reset_expires_at = NULL WHERE LOWER(email) = $1 AND reset_code_hash = $2",
           [email, codeHash],
@@ -349,7 +350,7 @@ const resetPassword = async (req, res) => {
     !email ||
     email.length > 255 ||
     validateEmail(email) ||
-    !/^\d{8}$/.test(code)
+    !/^\d{6}$/.test(code)
   ) {
     return res
       .status(400)

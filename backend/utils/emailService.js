@@ -143,31 +143,9 @@ async function sendPasswordResetEmail(email, code) {
   }
 
   if (process.env.EMAIL_API_URL && process.env.EMAIL_API_SECRET) {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15_000);
-    try {
-      const response = await fetch(process.env.EMAIL_API_URL, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          secret: process.env.EMAIL_API_SECRET,
-          to: email,
-          code,
-          purpose: "password-reset",
-        }),
-        signal: controller.signal,
-      });
-      const result = await response.json().catch(() => null);
-      return response.ok && result?.ok === true;
-    } catch (error) {
-      console.error(
-        "Password reset email API failed:",
-        error?.message || error,
-      );
-      return false;
-    } finally {
-      clearTimeout(timeout);
-    }
+    // The deployed relay already accepts the registration code contract.
+    // Reuse it so password recovery works with relays limited to six digits.
+    return sendVerificationEmail(email, code);
   }
 
   const config = getSmtpConfig();

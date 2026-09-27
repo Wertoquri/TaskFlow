@@ -14,9 +14,9 @@ test("console email mode does not require SMTP", async () =>
     true,
   ));
 test("console password reset mode does not require SMTP", async () =>
-  assert.equal(await sendPasswordResetEmail("demo@example.com", "12345678"), true));
+  assert.equal(await sendPasswordResetEmail("demo@example.com", "123456"), true));
 
-test("HTTPS relay marks password reset messages", { concurrency: false }, async () => {
+test("HTTPS relay accepts password reset through the registration payload", { concurrency: false }, async () => {
   const originalFetch = global.fetch;
   const originalMode = process.env.EMAIL_MODE;
   process.env.EMAIL_MODE = "smtp";
@@ -25,12 +25,15 @@ test("HTTPS relay marks password reset messages", { concurrency: false }, async 
   let payload;
   global.fetch = async (_url, options) => {
     payload = JSON.parse(options.body);
-    return { ok: true, status: 200, json: async () => ({ ok: true }) };
+    const compatible =
+      Object.keys(payload).sort().join(",") === "code,secret,to" &&
+      /^\d{6}$/.test(payload.code);
+    return { ok: true, status: 200, json: async () => ({ ok: compatible }) };
   };
   try {
-    assert.equal(await sendPasswordResetEmail("demo@example.com", "12345678"), true);
+    assert.equal(await sendPasswordResetEmail("demo@example.com", "123456"), true);
     assert.deepEqual(payload, {
-      secret: "test-secret", to: "demo@example.com", code: "12345678", purpose: "password-reset",
+      secret: "test-secret", to: "demo@example.com", code: "123456",
     });
   } finally {
     global.fetch = originalFetch;
