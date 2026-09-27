@@ -1,8 +1,18 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useAuth } from "../context/AuthContext";
-import { getProjectMessages, sendProjectMessage, updateProjectMessage, deleteProjectMessage, API_URL } from "../api";
+import {
+  getProjectMessages,
+  sendProjectMessage,
+  updateProjectMessage,
+  deleteProjectMessage,
+  API_URL,
+} from "../api";
 import { useI18n } from "../context/I18nContext.jsx";
 import styles from "./ProjectPage.module.css";
+import { Check, MessageCircle, Pencil, Send, Trash2, X } from "lucide-react";
+
+const cleanLabel = (value) =>
+  String(value || "").replace(/^[^\p{L}\p{N}]+/u, "");
 
 export default function ProjectChat({ projectId }) {
   const { token, user, socket } = useAuth();
@@ -12,7 +22,7 @@ export default function ProjectChat({ projectId }) {
   const [loading, setLoading] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [editContent, setEditContent] = useState("");
-  const messagesEndRef = useRef(null);
+  const messagesPaneRef = useRef(null);
 
   async function loadMessages() {
     if (!token || !projectId) return;
@@ -35,16 +45,17 @@ export default function ProjectChat({ projectId }) {
     if (!socket) return;
     const handleNew = (msg) => {
       setMessages((prev) => {
-        if (prev.find(m => m.id === msg.id)) return prev;
+        if (prev.find((m) => m.id === msg.id)) return prev;
         return [...prev, msg];
       });
-      scrollToBottom();
     };
     const handleUpdate = ({ id, content }) => {
-      setMessages((prev) => prev.map(m => m.id === id ? { ...m, content } : m));
+      setMessages((prev) =>
+        prev.map((m) => (m.id === id ? { ...m, content } : m)),
+      );
     };
     const handleDelete = ({ id }) => {
-      setMessages((prev) => prev.filter(m => m.id !== id));
+      setMessages((prev) => prev.filter((m) => m.id !== id));
     };
     socket.on("chat:message", handleNew);
     socket.on("chat:updated", handleUpdate);
@@ -61,7 +72,8 @@ export default function ProjectChat({ projectId }) {
   }, [messages]);
 
   function scrollToBottom() {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const pane = messagesPaneRef.current;
+    if (pane) pane.scrollTop = pane.scrollHeight;
   }
 
   async function handleSend(e) {
@@ -73,13 +85,12 @@ export default function ProjectChat({ projectId }) {
       const newMessage = await sendProjectMessage(projectId, content, token);
       // Add message immediately (will be deduplicated if socket sends it again)
       setMessages((prev) => {
-        if (prev.find(m => m.id === newMessage.id)) return prev;
+        if (prev.find((m) => m.id === newMessage.id)) return prev;
         return [...prev, newMessage];
       });
-      scrollToBottom();
     } catch (err) {
       console.error("Failed to send message:", err);
-      alert(t('sendMessageError'));
+      alert(t("sendMessageError"));
     }
   }
 
@@ -91,13 +102,22 @@ export default function ProjectChat({ projectId }) {
   async function handleEdit() {
     if (!editContent.trim()) return;
     try {
-      await updateProjectMessage(projectId, editingId, editContent.trim(), token);
-      setMessages((prev) => prev.map(m => m.id === editingId ? { ...m, content: editContent.trim() } : m));
+      await updateProjectMessage(
+        projectId,
+        editingId,
+        editContent.trim(),
+        token,
+      );
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === editingId ? { ...m, content: editContent.trim() } : m,
+        ),
+      );
       setEditingId(null);
       setEditContent("");
     } catch (err) {
       console.error("Failed to edit message:", err);
-      alert(t('editMessageError'));
+      alert(t("editMessageError"));
     }
   }
 
@@ -107,80 +127,112 @@ export default function ProjectChat({ projectId }) {
   }
 
   async function handleDelete(msgId) {
-    if (!confirm(t('confirmDeleteMessage'))) return;
+    if (!confirm(t("confirmDeleteMessage"))) return;
     try {
       await deleteProjectMessage(projectId, msgId, token);
-      setMessages((prev) => prev.filter(m => m.id !== msgId));
+      setMessages((prev) => prev.filter((m) => m.id !== msgId));
     } catch (err) {
       console.error("Failed to delete message:", err);
-      alert(t('deleteMessageError'));
+      alert(t("deleteMessageError"));
     }
   }
 
   return (
-    <div
-      className={`${styles.panel} ${styles.chatPanel}`}
-      style={{
-        background: "#fff",
-        border: "none",
-        borderRadius: "16px",
-        padding: "24px",
-        boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
-        height: "500px",
-      }}
-    >
-      <h3 style={{ margin: "0 0 16px 0", fontSize: "18px", fontWeight: 700, color: "#1e293b" }}>
-        {t('projectChatTitle')}
+    <div className={`${styles.panel} ${styles.chatPanel}`}>
+      <h3 className={styles.sectionTitle}>
+        <MessageCircle aria-hidden="true" size={18} />
+        {cleanLabel(t("projectChatTitle"))}
       </h3>
 
-      <div
-        className={styles.messagesPane}
-        style={{
-          background: "#f8fafc",
-          borderRadius: "6px",
-        }}
-      >
+      <div className={styles.messagesPane} ref={messagesPaneRef}>
         {loading ? (
-          <div style={{ color: "#64748b", textAlign: "center", padding: "20px" }}>
-            {t('messagesLoading')}
-          </div>
+          <div className={styles.panelNotice}>{t("messagesLoading")}</div>
         ) : messages.length === 0 ? (
-          <div style={{ color: "#64748b", textAlign: "center", padding: "20px" }}>
-            {t('noMessagesYet')}
-          </div>
+          <div className={styles.panelNotice}>{t("noMessagesYet")}</div>
         ) : (
           messages.map((msg) => {
             const isMe = msg.user_id === user?.id;
             const isEditing = editingId === msg.id;
             const avatarVal = msg.avatar || msg.avatar_url || null;
-            const backendBase = API_URL.replace(/\/api$/i, '');
-            const avatarSrc = avatarVal ? (avatarVal.startsWith('http') ? avatarVal : `${backendBase}${avatarVal}`) : null;
-            const timeStr = new Date(msg.created_at).toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
+            const backendBase = API_URL.replace(/\/api$/i, "");
+            const avatarSrc = avatarVal
+              ? avatarVal.startsWith("http")
+                ? avatarVal
+                : `${backendBase}${avatarVal}`
+              : null;
+            const timeStr = new Date(msg.created_at).toLocaleTimeString(
+              "uk-UA",
+              { hour: "2-digit", minute: "2-digit" },
+            );
             return (
-              <div key={msg.id} className={`${styles.messageRow} ${isMe ? styles.messageRowOwn : styles.messageRowOther}`}>
+              <div
+                key={msg.id}
+                className={`${styles.messageRow} ${isMe ? styles.messageRowOwn : styles.messageRowOther}`}
+              >
                 <div className={styles.messageInner}>
                   {avatarSrc && (
-                    <img src={avatarSrc} alt={msg.username || 'avatar'} style={{ width: 28, height: 28, borderRadius: 14, objectFit: 'cover', border: '2px solid #ffffff', boxShadow: '0 0 0 1px rgba(15,23,42,0.06)' }} />
+                    <img
+                      src={avatarSrc}
+                      alt={msg.username || "avatar"}
+                      className={styles.chatAvatar}
+                    />
                   )}
-                  <div className={`${styles.messageBubble} ${isMe ? styles.messageBubbleOwn : styles.messageBubbleOther}`}>
-                    {!isMe && <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4, opacity: 0.8 }}>{msg.username || `${t('userHash')}${msg.user_id}`}</div>}
+                  <div
+                    className={`${styles.messageBubble} ${isMe ? styles.messageBubbleOwn : styles.messageBubbleOther}`}
+                  >
+                    {!isMe && (
+                      <div className={styles.chatAuthor}>
+                        {msg.username || `${t("userHash")}${msg.user_id}`}
+                      </div>
+                    )}
                     {isEditing ? (
                       <div>
-                        <input type="text" value={editContent} onChange={(e) => setEditContent(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleEdit()} style={{ width: '100%', padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: 4, marginBottom: 6, fontSize: 14 }} autoFocus />
-                        <div style={{ display: 'flex', gap: 6 }}>
-                          <button onClick={handleEdit} style={{ padding: '4px 10px', background: '#10b981', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}>✓ {t('save')}</button>
-                          <button onClick={cancelEdit} style={{ padding: '4px 10px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}>✕ {t('cancelAction')}</button>
+                        <input
+                          type="text"
+                          value={editContent}
+                          onChange={(e) => setEditContent(e.target.value)}
+                          onKeyDown={(e) => e.key === "Enter" && handleEdit()}
+                          className={styles.chatInput}
+                          autoFocus
+                        />
+                        <div className={styles.editActions}>
+                          <button
+                            onClick={handleEdit}
+                            className={`${styles.ghostButton} ${styles.successButton}`}
+                          >
+                            <Check aria-hidden="true" size={14} />
+                            {cleanLabel(t("save"))}
+                          </button>
+                          <button
+                            onClick={cancelEdit}
+                            className={styles.ghostButton}
+                          >
+                            <X aria-hidden="true" size={14} />
+                            {cleanLabel(t("cancelAction"))}
+                          </button>
                         </div>
                       </div>
                     ) : (
                       <>
-                        <div style={{ fontSize: 14, wordBreak: 'break-word' }}>{msg.content}</div>
-                        <div className={styles.messageMeta} style={{ fontSize: 11, marginTop: 4, opacity: 0.7 }}>
+                        <div className={styles.messageText}>{msg.content}</div>
+                        <div className={styles.messageMeta}>
                           <span>{timeStr}</span>
                           {isMe && (
-                            <div style={{ display: 'flex', gap: 6, marginLeft: 8 }}>
-                              <button onClick={() => startEdit(msg)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: 14, padding: 2 }} title={t('editTitle')}>✏️</button>
-                              <button onClick={() => handleDelete(msg.id)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: 14, padding: 2 }} title={t('deleteTitle')}>🗑️</button>
+                            <div className={styles.messageActions}>
+                              <button
+                                onClick={() => startEdit(msg)}
+                                title={t("editTitle")}
+                                aria-label={t("editTitle")}
+                              >
+                                <Pencil aria-hidden="true" size={14} />
+                              </button>
+                              <button
+                                onClick={() => handleDelete(msg.id)}
+                                title={t("deleteTitle")}
+                                aria-label={t("deleteTitle")}
+                              >
+                                <Trash2 aria-hidden="true" size={14} />
+                              </button>
                             </div>
                           )}
                         </div>
@@ -192,38 +244,25 @@ export default function ProjectChat({ projectId }) {
             );
           })
         )}
-        <div ref={messagesEndRef} />
       </div>
 
-      <form
-        onSubmit={handleSend}
-        className={styles.chatComposer}
-      >
+      <form onSubmit={handleSend} className={styles.chatComposer}>
         <input
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder={t('messagePlaceholder')}
+          placeholder={t("messagePlaceholder")}
           className={styles.chatInput}
-          style={{
-            padding: "10px 14px",
-            border: "1px solid #cbd5e1",
-            borderRadius: "8px",
-            fontSize: "14px",
-            outline: "none",
-          }}
           autoComplete="off"
+          aria-label={t("messagePlaceholder")}
         />
         <button
           type="submit"
           disabled={!input.trim()}
           className={styles.primaryButton}
-          style={{
-            background: input.trim() ? "#3b82f6" : "#cbd5e1",
-            cursor: input.trim() ? "pointer" : "not-allowed",
-          }}
         >
-          📤 {t('send')}
+          <Send aria-hidden="true" size={15} />
+          {cleanLabel(t("send"))}
         </button>
       </form>
     </div>

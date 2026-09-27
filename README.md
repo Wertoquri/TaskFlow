@@ -37,18 +37,27 @@ PostgreSQL    Cloudinary media
 
 ## Local development
 
-Prerequisites: Node.js 22 and PostgreSQL 16.
+Prerequisites: Node.js 22+ and a running PostgreSQL database. Set `DATABASE_URL` and a unique `JWT_SECRET` in `.env` before starting the app. `EMAIL_MODE=console` is suitable for local registration testing.
 
 ```bash
 cp .env.example .env
 npm ci
 npm --prefix backend ci
 npm --prefix backend run migrate
-npm --prefix backend start
 npm run dev
 ```
 
-Frontend: http://localhost:3000. API health: http://localhost:5000/api/health.
+On PowerShell, use `Copy-Item .env.example .env` instead of `cp` if preferred. `npm run dev` starts the API, checks its database health, and then starts Vite. This prevents a frontend-only server from showing a failing registration page. For frontend-only work, use `npm run dev:web`.
+
+For a PostgreSQL cluster kept outside the repository, an optional ignored `.taskflow-local-db.json` lets `npm run dev` start it when needed:
+
+```json
+{ "pgCtl": "C:/path/to/PostgreSQL/bin/pg_ctl.exe", "dataDir": "C:/path/to/local/data", "port": 5433 }
+```
+
+Its port must match the localhost port in `DATABASE_URL`. This configuration is only for local development.
+
+Frontend: http://127.0.0.1:3000. API health: http://127.0.0.1:5000/api/health. If the API health check fails, verify that PostgreSQL is running and that the `DATABASE_URL` role and database exist.
 
 ## Free portfolio deployment
 
@@ -88,6 +97,7 @@ GitHub Actions runs the same checks for every pull request and push to `main`.
 
 - Secrets are supplied only through environment variables.
 - Passwords are hashed with bcrypt and authenticated endpoints require JWT.
+- Password recovery is available from the sign-in page: an eight-digit email code expires after 15 minutes, allows five attempts and is issued at most once per minute. Resetting the password revokes previous JWT sessions. Configure SMTP or an HTTPS email relay for delivery; relay implementations should recognize `purpose: "password-reset"` to render the correct message.
 - `EMAIL_MODE=console` and seeded credentials are intended only for local demonstrations.
 - Production requires a unique `JWT_SECRET`; media is stored outside the ephemeral app filesystem.
 

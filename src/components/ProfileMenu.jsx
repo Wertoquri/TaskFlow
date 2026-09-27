@@ -4,6 +4,7 @@ import { uploadAvatar, API_URL as API_BASE_URL } from "../api";
 import styles from "./ProfileMenu.module.css";
 import { useI18n } from "../context/I18nContext.jsx";
 import useMobileMenuPosition from "./useMobileMenuPosition.js";
+import { UserRound } from 'lucide-react';
 
 export default function ProfileMenu({ isOpen, onToggle }) {
   const { user, logout, refreshUser, token } = useAuth();
@@ -26,6 +27,7 @@ export default function ProfileMenu({ isOpen, onToggle }) {
       <button
         ref={triggerRef}
         aria-label={t('profile')}
+        aria-expanded={isOpen}
         onClick={onToggle}
         className={styles.button}
       >
@@ -36,7 +38,7 @@ export default function ProfileMenu({ isOpen, onToggle }) {
             return <img src={src} alt={user.username || 'avatar'} className={styles.avatarSmall} />;
           })()
         ) : (
-          <span role="img" aria-label="user" className={styles.icon}>👤</span>
+          <UserRound aria-hidden="true" className={styles.icon} />
         )}
       </button>
       {isOpen && (
@@ -54,9 +56,7 @@ export default function ProfileMenu({ isOpen, onToggle }) {
                     return <img src={src} alt={user.username || 'avatar'} className={styles.avatar} />;
                   })()
                 ) : (
-                  <div style={{ width: 56, height: 56, borderRadius: 9999, background: '#eef2ff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24 }}>
-                    👤
-                  </div>
+                  <div className={styles.avatarFallback}><UserRound aria-hidden="true" /></div>
                 )}
                 <div>
                   <div className={styles.username}>{user.username || '—'}</div>

@@ -36,14 +36,12 @@ async function updateMemberPermissions(req, res) {
   const targetUserId = Number(req.params.userId);
   const requesterId = req.user.id;
   const permissions = req.body; // JSON object (whole body is permissions)
-  console.log('updateMemberPermissions DEBUG:', { projectId, targetUserId, requesterId, permissions });
   try {
     const me = await getQuery('SELECT role FROM project_members WHERE project_id = ? AND user_id = ?', [projectId, requesterId]);
     if (!me.length || me[0].role !== 'admin') return res.status(403).json({ message: 'Admin only' });
     const member = await getQuery('SELECT id FROM project_members WHERE project_id = ? AND user_id = ?', [projectId, targetUserId]);
     if (!member.length) return res.status(404).json({ message: 'Member not found' });
     await run('UPDATE project_members SET permissions = ? WHERE project_id = ? AND user_id = ?', [JSON.stringify(permissions || {}), projectId, targetUserId]);
-    console.log('updateMemberPermissions SUCCESS: updated permissions for user', targetUserId);
     res.json({ message: 'Member permissions updated' });
   } catch (e) { console.error('updateMemberPermissions ERROR:', e); res.status(500).json({ message: 'Server error' }); }
 }

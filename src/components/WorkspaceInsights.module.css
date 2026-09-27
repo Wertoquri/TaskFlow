@@ -1,0 +1,188 @@
+.projectSummary {
+  margin-bottom: 18px;
+}
+.summaryHeading {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  margin: 0 2px 13px;
+}
+.summaryHeading h2 {
+  margin: 0;
+  color: var(--foreground);
+  font-size: 17px;
+  font-weight: 770;
+  letter-spacing: -0.025em;
+}
+.summaryHeading span {
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+.summaryCard {
+  min-width: 0;
+  gap: 12px;
+  border: 1px solid var(--border);
+  box-shadow: none;
+}
+.summaryCard [data-slot="card-title"] {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 14px;
+  font-weight: 770;
+}
+.summaryCard [data-slot="card-description"] {
+  font-size: 12px;
+  line-height: 1.5;
+}
+.progressTop {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.progressTop strong {
+  font-size: 28px;
+  line-height: 1;
+  font-weight: 800;
+}
+.progressTop span {
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
+.progressTrack {
+  height: 8px;
+  margin-top: 12px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: var(--muted);
+}
+.progressTrack span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--primary);
+  transition: width 0.25s ease;
+}
+.progressBreakdown {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin-top: 14px;
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
+.progressBreakdown span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.progressBreakdown svg {
+  width: 15px;
+  height: 15px;
+  color: var(--primary);
+}
+.titleIcon {
+  width: 16px;
+  height: 16px;
+  color: var(--primary);
+}
+.deadlineList {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.deadlineRow {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  padding: 7px;
+  border-radius: 8px;
+}
+.deadlineRow:hover {
+  background: var(--muted);
+}
+.deadlineRow > span:nth-child(2) {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.deadlineRow strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 700;
+}
+.deadlineRow small {
+  color: var(--muted-foreground);
+  font-size: 11px;
+}
+.deadlineRow > svg {
+  width: 13px;
+  height: 13px;
+  flex: none;
+  color: var(--muted-foreground);
+}
+.deadlineDot {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--primary);
+}
+.empty {
+  margin: 0;
+  padding: 6px 0;
+  color: var(--muted-foreground);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.teamCount {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.teamCount svg {
+  width: 20px;
+  height: 20px;
+  color: var(--primary);
+}
+.teamCount strong {
+  font-size: 24px;
+  line-height: 1;
+}
+.teamCount span {
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
+.summaryCard [data-slot="card-footer"] {
+  margin-top: auto;
+  padding: 0 16px 16px;
+  border-top: 0;
+  background: transparent;
+}
+@media (max-width: 1050px) {
+  .summaryGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 680px) {
+  .summaryGrid {
+    grid-template-columns: 1fr;
+  }
+  .summaryHeading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+}

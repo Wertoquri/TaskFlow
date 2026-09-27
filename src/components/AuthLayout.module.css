@@ -1,0 +1,286 @@
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  min-height: 100svh;
+  background: var(--card);
+}
+.story {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: clamp(32px, 5.2vw, 82px);
+  overflow: hidden;
+  background: #f8fbfc;
+  border-right: 1px solid var(--border);
+}
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  color: var(--foreground);
+  font-size: clamp(25px, 2vw, 32px);
+  font-weight: 800;
+  letter-spacing: -0.06em;
+  white-space: nowrap;
+}
+.brandIcon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  color: var(--primary);
+}
+.brandIcon svg {
+  width: 36px;
+  height: 36px;
+  stroke-width: 2.6;
+}
+.brandCompact {
+  font-size: 23px;
+  gap: 9px;
+}
+.brandCompact .brandIcon {
+  width: 30px;
+  height: 30px;
+}
+.brandCompact .brandIcon svg {
+  width: 28px;
+  height: 28px;
+}
+.storyContent {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  max-width: 620px;
+}
+.storyContent h1 {
+  max-width: 600px;
+  margin: 0;
+  font-size: clamp(36px, 3.55vw, 58px);
+  line-height: 1.12;
+  letter-spacing: -0.035em;
+  font-weight: 800;
+}
+.storyContent p {
+  max-width: 570px;
+  margin: 25px 0 0;
+  color: var(--muted-foreground);
+  font-size: clamp(16px, 1.35vw, 21px);
+  line-height: 1.65;
+}
+.diagram {
+  position: relative;
+  height: 260px;
+  margin-top: 32px;
+}
+.diagram::before {
+  content: "";
+  position: absolute;
+  inset: 85px 15% 48px;
+  border: 2px solid var(--primary);
+  border-radius: 36px;
+  opacity: 0.75;
+}
+.diagramHub {
+  position: absolute;
+  top: 92px;
+  left: 50%;
+  display: grid;
+  place-items: center;
+  width: 112px;
+  height: 112px;
+  transform: translateX(-50%);
+  border-radius: 24px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  box-shadow: 0 14px 24px #0b807a26;
+}
+.diagramHub svg {
+  width: 46px;
+  height: 46px;
+  stroke-width: 1.8;
+}
+.diagramCard {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  width: 175px;
+  height: 76px;
+  padding: 15px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 12px 28px #13263a0c;
+}
+.diagramCard svg {
+  width: 25px;
+  height: 25px;
+  flex: none;
+  color: var(--muted-foreground);
+}
+.diagramCard span {
+  display: grid;
+  gap: 8px;
+  flex: 1;
+}
+.diagramCard i {
+  display: block;
+  height: 7px;
+  border-radius: 10px;
+  background: #dce4e9;
+}
+.diagramCard i:last-child {
+  width: 70%;
+}
+.diagramCard b {
+  width: 10px;
+  height: 10px;
+  flex: none;
+  border-radius: 50%;
+  background: #1ca89a;
+}
+.cardOne {
+  left: 0;
+  top: 66px;
+}
+.cardTwo {
+  right: 0;
+  top: 9px;
+}
+.cardThree {
+  right: 0;
+  bottom: 0;
+}
+.formSide {
+  display: grid;
+  place-items: center;
+  padding: 28px;
+}
+.formCard {
+  width: min(100%, 550px);
+  padding: clamp(28px, 3vw, 48px);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--card);
+}
+.formCard h2 {
+  margin: 0;
+  font-size: clamp(27px, 2.2vw, 37px);
+  letter-spacing: -0.025em;
+  line-height: 1.2;
+  text-align: center;
+  font-weight: 800;
+}
+.formCard .subtitle {
+  margin: 13px auto 34px;
+  max-width: 370px;
+  color: var(--muted-foreground);
+  line-height: 1.6;
+  text-align: center;
+}
+.formCard form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.formCard input {
+  min-height: 48px;
+  font-size: 15px;
+}
+.formCard [data-slot="field-label"] {
+  font-weight: 700;
+  font-size: 14px;
+}
+.formCard [data-slot="field-description"] {
+  font-size: 12px;
+}
+.formCard .primaryButton {
+  width: 100%;
+  min-height: 48px;
+  font-size: 15px;
+  font-weight: 700;
+}
+.formCard .switchAuth {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin: 27px 0 0;
+  font-size: 14px;
+  color: var(--muted-foreground);
+}
+.formCard .switchAuth a {
+  color: var(--primary);
+  font-weight: 700;
+}
+.formCard .switchAuth a:hover {
+  text-decoration: underline;
+}
+.formCard .forgotLink {
+  align-self: flex-end;
+  color: var(--primary);
+  font-size: 14px;
+  font-weight: 700;
+}
+.formCard .forgotLink:hover {
+  text-decoration: underline;
+}
+.strength {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 5px;
+  margin-top: 2px;
+}
+.strength span {
+  height: 5px;
+  border-radius: 8px;
+  background: var(--border);
+}
+.strength span[data-active="weak"] {
+  background: #c83239;
+}
+.strength span[data-active="medium"] {
+  background: #af6b04;
+}
+.strength span[data-active="strong"] {
+  background: var(--primary);
+}
+.strengthLabel {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted-foreground);
+}
+@media (max-width: 850px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+  .story {
+    padding: 22px 28px;
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .storyContent {
+    display: none;
+  }
+  .formSide {
+    min-height: calc(100svh - 86px);
+  }
+}
+@media (max-width: 540px) {
+  .story {
+    padding: 18px;
+  }
+  .formSide {
+    align-items: start;
+    padding: 24px 16px;
+  }
+  .formCard {
+    padding: 26px 21px;
+    border-radius: 16px;
+  }
+}

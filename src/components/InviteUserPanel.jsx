@@ -2,6 +2,10 @@ import React, { useState } from "react";
 import { createInvitation } from "../api";
 import { useI18n } from "../context/I18nContext.jsx";
 import styles from "./ProjectPage.module.css";
+import { Link2 } from "lucide-react";
+
+const cleanLabel = (value) =>
+  String(value || "").replace(/^[^\p{L}\p{N}]+/u, "");
 
 export default function InviteUserPanel({ projectId, token, onSuccess }) {
   const [email, setEmail] = useState("");
@@ -13,7 +17,7 @@ export default function InviteUserPanel({ projectId, token, onSuccess }) {
   async function handleInvite(e) {
     e.preventDefault();
     if (!email.trim()) {
-      setError(t('enterEmail'));
+      setError(t("enterEmail"));
       return;
     }
 
@@ -23,29 +27,21 @@ export default function InviteUserPanel({ projectId, token, onSuccess }) {
 
     try {
       await createInvitation(projectId, email.trim(), token);
-      setSuccess(`${t('inviteSentTo')} ${email}`);
+      setSuccess(`${t("inviteSentTo")} ${email}`);
       setEmail("");
       onSuccess && onSuccess();
     } catch (err) {
-      setError(err.response?.data?.message || t('inviteError'));
+      setError(err.response?.data?.message || t("inviteError"));
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div
-      className={styles.panel}
-      style={{
-        background: "#fff",
-        border: "none",
-        borderRadius: "16px",
-        padding: "24px",
-        boxShadow: "0 4px 6px rgba(0,0,0,0.1)"
-      }}
-    >
-      <h3 style={{ margin: "0 0 16px 0", fontSize: "18px", fontWeight: 700, color: "#1e293b" }}>
-        {t('inviteUserTitle')}
+    <div className={styles.panel}>
+      <h3 className={styles.sectionTitle}>
+        <Link2 aria-hidden="true" size={18} />
+        {cleanLabel(t("inviteUserTitle"))}
       </h3>
       <form onSubmit={handleInvite} className={styles.inviteForm}>
         <div className={styles.inviteInputWrap}>
@@ -53,25 +49,18 @@ export default function InviteUserPanel({ projectId, token, onSuccess }) {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder={t('invitePlaceholder')}
+            placeholder={t("invitePlaceholder")}
             disabled={loading}
-            style={{
-              width: "100%",
-              padding: "10px 12px",
-              border: "1px solid #cbd5e1",
-              borderRadius: "6px",
-              fontSize: "14px",
-              boxSizing: "border-box",
-            }}
+            aria-label={t("invitePlaceholder")}
           />
           {error && (
-            <div style={{ color: "#ef4444", fontSize: "13px", marginTop: "6px" }}>
-              ❌ {error}
+            <div className={styles.formError} role="alert">
+              {error}
             </div>
           )}
           {success && (
-            <div style={{ color: "#10b981", fontSize: "13px", marginTop: "6px" }}>
-              ✅ {success}
+            <div className={styles.formSuccess} role="status">
+              {success}
             </div>
           )}
         </div>
@@ -79,13 +68,8 @@ export default function InviteUserPanel({ projectId, token, onSuccess }) {
           type="submit"
           disabled={loading}
           className={styles.primaryButton}
-          style={{
-            background: loading ? "#94a3b8" : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-            cursor: loading ? "not-allowed" : "pointer",
-            boxShadow: loading ? "none" : "0 2px 4px rgba(102,126,234,0.3)",
-          }}
         >
-          {loading ? t('inviting') : t('inviteBtn')}
+          {cleanLabel(loading ? t("inviting") : t("inviteBtn"))}
         </button>
       </form>
     </div>

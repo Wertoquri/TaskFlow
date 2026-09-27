@@ -1,75 +1,105 @@
 import React, { useEffect, useState, useRef } from "react";
-import { getTasksByProject, updateTask, uploadTaskAttachment, getTaskAttachments, deleteTaskAttachment as apiDeleteAttachment, SOCKET_URL } from "../api";
-import io from "socket.io-client";
+import {
+  getTasksByProject,
+  updateTask,
+  uploadTaskAttachment,
+  deleteTaskAttachment as apiDeleteAttachment,
+} from "../api";
+import { useAuth } from "../context/AuthContext.jsx";
 import Toast from "./Toast";
 import styles from "./Kanban.module.css";
 import { useI18n } from "../context/I18nContext.jsx";
+import {
+  CalendarDays,
+  FileText,
+  Paperclip,
+  Plus,
+  Tag,
+  Trash2,
+} from "lucide-react";
 
-const columnsFor = (t) => ([
-  { key: "pending", title: t('kanbanPending') },
-  { key: "in_progress", title: t('kanbanInProgress') },
-  { key: "done", title: t('kanbanDone') },
-]);
+const cleanLabel = (value) =>
+  String(value || "").replace(/^[^\p{L}\p{N}]+/u, "");
 
-export default function Kanban({ project, filters }) {
+const columnsFor = (t) => [
+  { key: "pending", title: t("kanbanPending") },
+  { key: "in_progress", title: t("kanbanInProgress") },
+  { key: "done", title: t("kanbanDone") },
+];
+
+export default function Kanban({ project, filters, onAddTask }) {
   const [tasks, setTasks] = useState([]);
-  const [socket, setSocket] = useState(null);
+  const [loadError, setLoadError] = useState(false);
   const [toast, setToast] = useState(null);
   const [editingLabels, setEditingLabels] = useState(null);
   const [newLabel, setNewLabel] = useState("");
   const [loadingAttachments, setLoadingAttachments] = useState({});
   const [expandedAttachments, setExpandedAttachments] = useState({});
-  const debounceTimer = useRef(null);
   const kanbanRef = useRef(null);
   const animatedRef = useRef(false);
   const { t } = useI18n();
+  const { socket } = useAuth();
 
   useEffect(() => {
     async function load() {
       if (!project) return;
       const token = localStorage.getItem("token");
-      const data = await getTasksByProject(project.id, token);
-      setTasks(data);
+      try {
+        const data = await getTasksByProject(project.id, token);
+        setTasks(Array.isArray(data) ? data : []);
+        setLoadError(false);
+      } catch {
+        setTasks([]);
+        setLoadError(true);
+      }
     }
     load();
   }, [project]);
 
   useEffect(() => {
     // GSAP анімація для Kanban колонок та карток - лише один раз
-    if (animatedRef.current || !tasks.length || !window.gsap || !window.ScrollTrigger) return;
-    
-    const columns = document.querySelectorAll('[data-kanban-column]');
+    if (
+      animatedRef.current ||
+      !tasks.length ||
+      !window.gsap ||
+      !window.ScrollTrigger
+    )
+      return;
+
+    const columns = document.querySelectorAll("[data-kanban-column]");
     if (columns.length > 0) {
-      window.gsap.fromTo(columns, 
+      window.gsap.fromTo(
+        columns,
         {
           y: 30,
-          opacity: 0
+          opacity: 0,
         },
         {
           y: 0,
           opacity: 1,
           duration: 0.6,
           stagger: 0.15,
-          ease: "power2.out"
-        }
+          ease: "power2.out",
+        },
       );
     }
-    
+
     setTimeout(() => {
-      const cards = document.querySelectorAll('[data-kanban-card]');
+      const cards = document.querySelectorAll("[data-kanban-card]");
       if (cards.length > 0) {
-        window.gsap.fromTo(cards,
+        window.gsap.fromTo(
+          cards,
           {
             scale: 0.9,
-            opacity: 0
+            opacity: 0,
           },
           {
             scale: 1,
             opacity: 1,
             duration: 0.4,
             stagger: 0.05,
-            ease: "back.out(1.2)"
-          }
+            ease: "back.out(1.2)",
+          },
         );
         animatedRef.current = true;
       }
@@ -77,15 +107,19 @@ export default function Kanban({ project, filters }) {
   }, [tasks]);
 
   useEffect(() => {
-    const s = io(SOCKET_URL);
-    setSocket(s);
+    if (!socket || !project?.id) return;
+    const joinProject = () => socket.emit("join-project", project.id);
+    socket.on("connect", joinProject);
+    if (socket.connected) joinProject();
     function onCreated(task) {
       if (task.project_id !== project?.id) return;
       setTasks((prev) => [task, ...prev]);
     }
     function onUpdated(task) {
       setTasks((prev) =>
-        prev.map((x) => (String(x.id) === String(task.id) ? { ...x, ...task } : x))
+        prev.map((x) =>
+          String(x.id) === String(task.id) ? { ...x, ...task } : x,
+        ),
       );
     }
     function onDeleted({ id }) {
@@ -97,10 +131,12 @@ export default function Kanban({ project, filters }) {
       setTasks((prev) =>
         prev.map((t) => {
           if (String(t.id) !== taskId) return t;
-          const exists = (t.attachments || []).some((a) => Number(a.id) === Number(payload.id));
+          const exists = (t.attachments || []).some(
+            (a) => Number(a.id) === Number(payload.id),
+          );
           if (exists) return t; // avoid duplicate when optimistic + socket both add
           return { ...t, attachments: [payload, ...(t.attachments || [])] };
-        })
+        }),
       );
     }
 
@@ -111,25 +147,31 @@ export default function Kanban({ project, filters }) {
       setTasks((prev) =>
         prev.map((t) =>
           String(t.id) === taskId
-            ? { ...t, attachments: (t.attachments || []).filter((a) => a.id !== attId) }
-            : t
-        )
+            ? {
+                ...t,
+                attachments: (t.attachments || []).filter(
+                  (a) => a.id !== attId,
+                ),
+              }
+            : t,
+        ),
       );
     }
-    s.on("task-created", onCreated);
-    s.on("task-updated", onUpdated);
-    s.on("task-deleted", onDeleted);
-    s.on('task-attachment-added', onAttachmentAdded);
-    s.on('task-attachment-deleted', onAttachmentDeleted);
+    socket.on("task-created", onCreated);
+    socket.on("task-updated", onUpdated);
+    socket.on("task-deleted", onDeleted);
+    socket.on("task-attachment-added", onAttachmentAdded);
+    socket.on("task-attachment-deleted", onAttachmentDeleted);
     return () => {
-      s.off("task-created", onCreated);
-      s.off("task-updated", onUpdated);
-      s.off("task-deleted", onDeleted);
-      s.off('task-attachment-added', onAttachmentAdded);
-      s.off('task-attachment-deleted', onAttachmentDeleted);
-      s.disconnect();
+      socket.off("connect", joinProject);
+      socket.off("task-created", onCreated);
+      socket.off("task-updated", onUpdated);
+      socket.off("task-deleted", onDeleted);
+      socket.off("task-attachment-added", onAttachmentAdded);
+      socket.off("task-attachment-deleted", onAttachmentDeleted);
+      socket.emit("leave-project", project.id);
     };
-  }, [project?.id]);
+  }, [socket, project?.id]);
 
   function onDragStart(e, taskId) {
     e.dataTransfer.setData("text/plain", String(taskId));
@@ -138,16 +180,41 @@ export default function Kanban({ project, filters }) {
   async function onDrop(e, status) {
     const taskId = e.dataTransfer.getData("text/plain");
     if (!taskId) return;
-    // optimistic move
+    const previousStatus = tasks.find(
+      (task) => String(task.id) === taskId,
+    )?.status;
     setTasks((prev) =>
-      prev.map((t) => (t.id == taskId ? { ...t, status } : t))
+      prev.map((t) => (t.id == taskId ? { ...t, status } : t)),
     );
     try {
       const token = localStorage.getItem("token");
-      console.log('updateTask (drop):', { taskId, status });
       await updateTask(taskId, { status }, token);
-    } catch (err) {
-      // TODO: revert, or reload
+    } catch {
+      setTasks((prev) =>
+        prev.map((task) =>
+          String(task.id) === taskId
+            ? { ...task, status: previousStatus }
+            : task,
+        ),
+      );
+      setToast({ message: t("errorGeneric"), type: "error" });
+    }
+  }
+
+  async function toggleDone(task) {
+    const status = task.status === "done" ? "pending" : "done";
+    setTasks((current) =>
+      current.map((item) => (item.id === task.id ? { ...item, status } : item)),
+    );
+    try {
+      await updateTask(task.id, { status }, localStorage.getItem("token"));
+    } catch {
+      setTasks((current) =>
+        current.map((item) =>
+          item.id === task.id ? { ...item, status: task.status } : item,
+        ),
+      );
+      setToast({ message: t("errorGeneric"), type: "error" });
     }
   }
 
@@ -163,7 +230,7 @@ export default function Kanban({ project, filters }) {
       const labels = Array.isArray(task.labels) ? task.labels : [];
       if (
         !labels.some((l) =>
-          String(l).toLowerCase().includes(filters.label.toLowerCase())
+          String(l).toLowerCase().includes(filters.label.toLowerCase()),
         )
       )
         return false;
@@ -184,15 +251,26 @@ export default function Kanban({ project, filters }) {
         setTasks((prev) =>
           prev.map((x) => {
             if (x.id !== task.id) return x;
-            const exists = (x.attachments || []).some((a) => Number(a.id) === Number(attachment.id));
+            const exists = (x.attachments || []).some(
+              (a) => Number(a.id) === Number(attachment.id),
+            );
             if (exists) return x;
-            return { ...x, attachments: [attachment, ...(x.attachments || [])] };
-          })
+            return {
+              ...x,
+              attachments: [attachment, ...(x.attachments || [])],
+            };
+          }),
         );
-        setToast({ message: t('attachmentUploaded') || 'Attachment uploaded', type: 'success' });
+        setToast({
+          message: t("attachmentUploaded") || "Attachment uploaded",
+          type: "success",
+        });
       } catch (err) {
-        console.error('Upload attachment error', err);
-        setToast({ message: t('attachmentUploadError') || 'Attachment upload error', type: 'error' });
+        console.error("Upload attachment error", err);
+        setToast({
+          message: t("attachmentUploadError") || "Attachment upload error",
+          type: "error",
+        });
       } finally {
         setLoadingAttachments((prev) => ({ ...prev, [task.id]: false }));
       }
@@ -202,19 +280,24 @@ export default function Kanban({ project, filters }) {
 
   function triggerDownload(url, filename) {
     try {
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
-      a.download = filename || '';
+      a.download = filename || "";
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
     } catch (e) {
-      console.error('Download attachment error', e);
+      console.error("Download attachment error", e);
     }
   }
 
   return (
     <div className={styles.container} ref={kanbanRef}>
+      {loadError && (
+        <p className={styles.loadError} role="alert">
+          {t("errorGeneric")}
+        </p>
+      )}
       {columnsFor(t).map((col) => (
         <div
           key={col.key}
@@ -224,7 +307,23 @@ export default function Kanban({ project, filters }) {
           data-kanban-column
         >
           <div className={styles.columnTitle}>
-            {col.title}
+            <span>{col.title}</span>
+            <span className={styles.columnCount}>
+              {
+                tasks.filter((task) => task.status === col.key && visible(task))
+                  .length
+              }
+            </span>
+            {onAddTask && (
+              <button
+                type="button"
+                className={styles.addTaskButton}
+                onClick={onAddTask}
+                aria-label={`${t("add")} — ${col.title}`}
+              >
+                <Plus aria-hidden="true" />
+              </button>
+            )}
           </div>
           {tasks
             .filter((task) => task.status === col.key)
@@ -237,256 +336,355 @@ export default function Kanban({ project, filters }) {
                 className={styles.taskCard}
                 data-kanban-card
               >
-                <div className={styles.taskTitle}>
-                  {task.title}
+                <div className={styles.taskHeader}>
+                  <input
+                    type="checkbox"
+                    checked={task.status === "done"}
+                    onChange={() => toggleDone(task)}
+                    aria-label={`${task.title} — ${t("kanbanDone")}`}
+                    draggable={false}
+                  />
+                  <div className={styles.taskTitle}>{task.title}</div>
                 </div>
+                {task.due_date && (
+                  <div className={styles.taskDate}>
+                    <CalendarDays aria-hidden="true" />
+                    {new Date(task.due_date).toLocaleDateString()}
+                  </div>
+                )}
                 {task.description && (
                   <div className={styles.taskDescription}>
                     {task.description}
                   </div>
                 )}
-                {/* Attachments section */}
-                <div className={styles.attachmentsRow}>
-                  <button
-                    type="button"
-                    className={styles.attachmentButton}
-                    onClick={() => handleUploadAttachment(task)}
-                    draggable={false}
-                    onMouseDown={(e) => e.stopPropagation()}
-                    disabled={!!loadingAttachments[task.id]}
-                  >
-                    📎 {loadingAttachments[task.id] ? (t('uploading') || 'Uploading...') : (t('addAttachment') || 'Додати файл')}
-                  </button>
-                  {Array.isArray(task.attachments) && task.attachments.length > 0 && (
-                    <div className={styles.attachmentsList}>
-                      {((expandedAttachments[task.id]) ? task.attachments : task.attachments.slice(0, 2)).map((att) => (
-                        <span key={att.id} className={styles.attachmentItem} title={att.original_name}>
-                          <a
-                            href={att.url}
-                            onClick={(e) => { e.preventDefault(); triggerDownload(att.url, att.original_name); }}
-                          >
-                            📄 {att.original_name}
-                          </a>
-                          <button
-                            type="button"
-                            className={styles.attachmentDelete}
-                            draggable={false}
-                            onMouseDown={(e) => e.stopPropagation()}
-                            title={t('deleteAttachment') || 'Видалити файл'}
-                            aria-label={t('deleteAttachment') || 'Видалити файл'}
-                            onClick={async (e) => {
-                              e.stopPropagation();
-                              try {
-                                const token = localStorage.getItem('token');
-                                await apiDeleteAttachment(task.id, att.id, token);
-                                setTasks((prev) => prev.map((x) => x.id === task.id ? { ...x, attachments: (x.attachments || []).filter(a => a.id !== att.id) } : x));
-                                setToast({ message: t('attachmentDeleted') || 'Файл успішно видалено', type: 'success' });
-                              } catch (err) {
-                                console.error('Delete attachment error', err);
-                                setToast({ message: t('attachmentDeleteError') || 'Не вдалося видалити файл. Спробуйте ще раз.', type: 'error' });
+                <details className={styles.taskDetails}>
+                  <summary>{t("details")}</summary>
+                  <div className={styles.attachmentsRow}>
+                    <button
+                      type="button"
+                      className={styles.attachmentButton}
+                      onClick={() => handleUploadAttachment(task)}
+                      draggable={false}
+                      onMouseDown={(e) => e.stopPropagation()}
+                      disabled={!!loadingAttachments[task.id]}
+                    >
+                      <Paperclip aria-hidden="true" size={14} />
+                      {loadingAttachments[task.id]
+                        ? t("uploading") || "Uploading..."
+                        : cleanLabel(t("addAttachment") || "Додати файл")}
+                    </button>
+                    {Array.isArray(task.attachments) &&
+                      task.attachments.length > 0 && (
+                        <div className={styles.attachmentsList}>
+                          {(expandedAttachments[task.id]
+                            ? task.attachments
+                            : task.attachments.slice(0, 2)
+                          ).map((att) => (
+                            <span
+                              key={att.id}
+                              className={styles.attachmentItem}
+                              title={att.original_name}
+                            >
+                              <a
+                                href={att.url}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  triggerDownload(att.url, att.original_name);
+                                }}
+                              >
+                                <FileText aria-hidden="true" size={13} />
+                                {att.original_name}
+                              </a>
+                              <button
+                                type="button"
+                                className={styles.attachmentDelete}
+                                draggable={false}
+                                onMouseDown={(e) => e.stopPropagation()}
+                                title={t("deleteAttachment") || "Видалити файл"}
+                                aria-label={
+                                  t("deleteAttachment") || "Видалити файл"
+                                }
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  try {
+                                    const token = localStorage.getItem("token");
+                                    await apiDeleteAttachment(
+                                      task.id,
+                                      att.id,
+                                      token,
+                                    );
+                                    setTasks((prev) =>
+                                      prev.map((x) =>
+                                        x.id === task.id
+                                          ? {
+                                              ...x,
+                                              attachments: (
+                                                x.attachments || []
+                                              ).filter((a) => a.id !== att.id),
+                                            }
+                                          : x,
+                                      ),
+                                    );
+                                    setToast({
+                                      message:
+                                        t("attachmentDeleted") ||
+                                        "Файл успішно видалено",
+                                      type: "success",
+                                    });
+                                  } catch (err) {
+                                    console.error(
+                                      "Delete attachment error",
+                                      err,
+                                    );
+                                    setToast({
+                                      message:
+                                        t("attachmentDeleteError") ||
+                                        "Не вдалося видалити файл. Спробуйте ще раз.",
+                                      type: "error",
+                                    });
+                                  }
+                                }}
+                              >
+                                <Trash2 aria-hidden="true" size={13} />
+                              </button>
+                            </span>
+                          ))}
+                          {task.attachments.length > 2 && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setExpandedAttachments((prev) => ({
+                                  ...prev,
+                                  [task.id]: !prev[task.id],
+                                }));
+                              }}
+                              className={styles.moreAttachments}
+                              aria-expanded={!!expandedAttachments[task.id]}
+                              title={
+                                expandedAttachments[task.id]
+                                  ? t("showLess") || "Show less"
+                                  : `${t("showAllFiles") || "Show all"} (${task.attachments.length})`
                               }
-                            }}
-                          >
-                            🗑
-                          </button>
-                        </span>
-                      ))}
-                      {task.attachments.length > 2 && (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setExpandedAttachments((prev) => ({ ...prev, [task.id]: !prev[task.id] }));
-                          }}
-                          className={styles.moreAttachments}
-                          aria-expanded={!!expandedAttachments[task.id]}
-                          title={expandedAttachments[task.id] ? (t('showLess') || 'Show less') : `${t('showAllFiles') || 'Show all'} (${task.attachments.length})`}
-                        >
-                          {expandedAttachments[task.id] ? (t('showLess') || '−') : `+${task.attachments.length - 2}`}
-                        </button>
+                            >
+                              {expandedAttachments[task.id]
+                                ? t("showLess") || "−"
+                                : `+${task.attachments.length - 2}`}
+                            </button>
+                          )}
+                        </div>
                       )}
-                    </div>
-                  )}
-                </div>
-                <div className={styles.priorityRow}>
-                  <span className={styles.priorityLabel}>
-                    {t('priorityText')}
-                  </span>
-                  <select
-                    value={task.priority || "medium"}
-                    onChange={async (e) => {
-                      const newPriority = e.target.value;
-                      // optimistic
-                      setTasks((prev) =>
-                        prev.map((x) =>
-                          x.id === task.id ? { ...x, priority: newPriority } : x
-                        )
-                      );
-                      try {
-                        const token = localStorage.getItem("token");
-                        console.log('updateTask (priority):', { taskId: task.id, newPriority });
-                        await updateTask(
-                          task.id,
-                          { priority: newPriority },
-                          token
-                        );
-                        setToast({
-                          message: t('priorityUpdated'),
-                          type: "success",
-                        });
-                      } catch (err) {
-                        // revert on fail
+                  </div>
+                  <div className={styles.priorityRow}>
+                    <span className={styles.priorityLabel}>
+                      {cleanLabel(t("priorityText"))}
+                    </span>
+                    <select
+                      value={task.priority || "medium"}
+                      onChange={async (e) => {
+                        const newPriority = e.target.value;
+                        // optimistic
                         setTasks((prev) =>
                           prev.map((x) =>
                             x.id === task.id
-                              ? { ...x, priority: task.priority || "medium" }
-                              : x
-                          )
+                              ? { ...x, priority: newPriority }
+                              : x,
+                          ),
                         );
-                        setToast({
-                          message: t('priorityUpdateError'),
-                          type: "error",
-                        });
-                      }
-                    }}
-                    className={styles.prioritySelect}
-                  >
-                    <option value="low">{t('priorityLow')}</option>
-                    <option value="medium">{t('priorityMedium')}</option>
-                    <option value="high">{t('priorityHigh')}</option>
-                  </select>
-                </div>
-                <div className={styles.labelsSection}>
-                  {editingLabels === task.id ? (
-                    <div className={styles.labelsEditMode}>
-                      {(Array.isArray(task.labels) ? task.labels : []).map(
-                        (l, idx) => (
-                          <span
-                            key={idx}
-                            className={styles.labelChip}
-                          >
-                            🏷️ {l}
-                            <button
-                              onClick={async () => {
-                                const newLabels = (
-                                  Array.isArray(task.labels) ? task.labels : []
-                                ).filter((_, i) => i !== idx);
-                                setTasks((prev) =>
-                                  prev.map((x) =>
-                                    x.id === task.id
-                                      ? { ...x, labels: newLabels }
-                                      : x
-                                  )
-                                );
-                                try {
-                                  const token = localStorage.getItem("token");
-                                  console.log('updateTask (labels remove):', { taskId: task.id, newLabels });
-                                  await updateTask(
-                                    task.id,
-                                    { labels: newLabels },
-                                    token
-                                  );
-                                  setToast({
-                                    message: t('labelRemoved'),
-                                    type: "success",
-                                  });
-                                } catch (err) {
+                        try {
+                          const token = localStorage.getItem("token");
+                          console.log("updateTask (priority):", {
+                            taskId: task.id,
+                            newPriority,
+                          });
+                          await updateTask(
+                            task.id,
+                            { priority: newPriority },
+                            token,
+                          );
+                          setToast({
+                            message: t("priorityUpdated"),
+                            type: "success",
+                          });
+                        } catch (err) {
+                          // revert on fail
+                          setTasks((prev) =>
+                            prev.map((x) =>
+                              x.id === task.id
+                                ? { ...x, priority: task.priority || "medium" }
+                                : x,
+                            ),
+                          );
+                          setToast({
+                            message: t("priorityUpdateError"),
+                            type: "error",
+                          });
+                        }
+                      }}
+                      className={styles.prioritySelect}
+                    >
+                      <option value="low">
+                        {cleanLabel(t("priorityLow"))}
+                      </option>
+                      <option value="medium">
+                        {cleanLabel(t("priorityMedium"))}
+                      </option>
+                      <option value="high">
+                        {cleanLabel(t("priorityHigh"))}
+                      </option>
+                    </select>
+                  </div>
+                  <div className={styles.labelsSection}>
+                    {editingLabels === task.id ? (
+                      <div className={styles.labelsEditMode}>
+                        {(Array.isArray(task.labels) ? task.labels : []).map(
+                          (l, idx) => (
+                            <span key={idx} className={styles.labelChip}>
+                              <Tag aria-hidden="true" size={12} />
+                              {l}
+                              <button
+                                onClick={async () => {
+                                  const newLabels = (
+                                    Array.isArray(task.labels)
+                                      ? task.labels
+                                      : []
+                                  ).filter((_, i) => i !== idx);
                                   setTasks((prev) =>
                                     prev.map((x) =>
                                       x.id === task.id
-                                        ? { ...x, labels: task.labels }
-                                        : x
-                                    )
+                                        ? { ...x, labels: newLabels }
+                                        : x,
+                                    ),
                                   );
-                                  setToast({
-                                    message: t('labelRemoveError'),
-                                    type: "error",
-                                  });
-                                }
-                              }}
-                              className={styles.labelRemove}
-                              draggable={false}
-                              onMouseDown={(e) => e.stopPropagation()}
-                            >
-                              ×
-                            </button>
-                          </span>
-                        )
-                      )}
-                      <input
-                        value={newLabel}
-                        onChange={(e) => setNewLabel(e.target.value)}
-                        placeholder={t('labelInputPlaceholder')}
-                        className={styles.labelInput}
-                      />
-                      <button
-                        onClick={async () => {
-                          if (!newLabel.trim()) {
-                            setEditingLabels(null);
-                            setNewLabel("");
-                            return;
-                          }
+                                  try {
+                                    const token = localStorage.getItem("token");
+                                    console.log("updateTask (labels remove):", {
+                                      taskId: task.id,
+                                      newLabels,
+                                    });
+                                    await updateTask(
+                                      task.id,
+                                      { labels: newLabels },
+                                      token,
+                                    );
+                                    setToast({
+                                      message: t("labelRemoved"),
+                                      type: "success",
+                                    });
+                                  } catch (err) {
+                                    setTasks((prev) =>
+                                      prev.map((x) =>
+                                        x.id === task.id
+                                          ? { ...x, labels: task.labels }
+                                          : x,
+                                      ),
+                                    );
+                                    setToast({
+                                      message: t("labelRemoveError"),
+                                      type: "error",
+                                    });
+                                  }
+                                }}
+                                className={styles.labelRemove}
+                                draggable={false}
+                                onMouseDown={(e) => e.stopPropagation()}
+                              >
+                                ×
+                              </button>
+                            </span>
+                          ),
+                        )}
+                        <input
+                          value={newLabel}
+                          onChange={(e) => setNewLabel(e.target.value)}
+                          placeholder={t("labelInputPlaceholder")}
+                          className={styles.labelInput}
+                        />
+                        <button
+                          onClick={async () => {
+                            if (!newLabel.trim()) {
+                              setEditingLabels(null);
+                              setNewLabel("");
+                              return;
+                            }
 
-                          const current = Array.isArray(task.labels) ? task.labels : [];
-                          const newLabels = [...current, newLabel.trim()];
+                            const current = Array.isArray(task.labels)
+                              ? task.labels
+                              : [];
+                            const newLabels = [...current, newLabel.trim()];
 
-                          setTasks((prev) =>
-                            prev.map((x) =>
-                              x.id === task.id ? { ...x, labels: newLabels } : x
-                            )
-                          );
-                          setNewLabel("");
-
-                          try {
-                            const token = localStorage.getItem("token");
-                            await updateTask(task.id, { labels: newLabels }, token);
-                            setToast({ message: t('labelAdded'), type: 'success' });
-                          } catch (err) {
                             setTasks((prev) =>
                               prev.map((x) =>
-                                x.id === task.id ? { ...x, labels: current } : x
-                              )
+                                x.id === task.id
+                                  ? { ...x, labels: newLabels }
+                                  : x,
+                              ),
                             );
-                            setToast({ message: t('labelAddError'), type: 'error' });
-                          }
+                            setNewLabel("");
 
-                          setEditingLabels(null);
-                        }}
-                        className={styles.labelConfirm}
-                        draggable={false}
-                        onMouseDown={(e) => e.stopPropagation()}
-                      >
-                        ✓
-                      </button>
-                    </div>
-                  ) : (
-                    <div className={styles.labelsDisplayMode}>
-                      {(Array.isArray(task.labels) ? task.labels : []).map(
-                        (l, idx) => (
-                          <span
-                            key={idx}
-                            className={styles.labelChip}
-                          >
-                            🏷️ {l}
-                          </span>
-                        )
-                      )}
-                      <button
-                        onClick={(e) => {
-                          console.log('labelEdit clicked', { taskId: task.id });
-                          setEditingLabels(task.id);
-                        }}
-                        className={styles.labelEdit}
-                        draggable={false}
-                        onMouseDown={(e) => e.stopPropagation()}
-                      >
-                        {Array.isArray(task.labels) && task.labels.length
-                          ? t('labelEdit')
-                          : t('labelInputPlaceholder') || '+ мітка'}
-                      </button>
-                    </div>
-                  )}
-                </div>
+                            try {
+                              const token = localStorage.getItem("token");
+                              await updateTask(
+                                task.id,
+                                { labels: newLabels },
+                                token,
+                              );
+                              setToast({
+                                message: t("labelAdded"),
+                                type: "success",
+                              });
+                            } catch (err) {
+                              setTasks((prev) =>
+                                prev.map((x) =>
+                                  x.id === task.id
+                                    ? { ...x, labels: current }
+                                    : x,
+                                ),
+                              );
+                              setToast({
+                                message: t("labelAddError"),
+                                type: "error",
+                              });
+                            }
+
+                            setEditingLabels(null);
+                          }}
+                          className={styles.labelConfirm}
+                          draggable={false}
+                          onMouseDown={(e) => e.stopPropagation()}
+                        >
+                          ✓
+                        </button>
+                      </div>
+                    ) : (
+                      <div className={styles.labelsDisplayMode}>
+                        {(Array.isArray(task.labels) ? task.labels : []).map(
+                          (l, idx) => (
+                            <span key={idx} className={styles.labelChip}>
+                              <Tag aria-hidden="true" size={12} />
+                              {l}
+                            </span>
+                          ),
+                        )}
+                        <button
+                          onClick={(e) => {
+                            console.log("labelEdit clicked", {
+                              taskId: task.id,
+                            });
+                            setEditingLabels(task.id);
+                          }}
+                          className={styles.labelEdit}
+                          draggable={false}
+                          onMouseDown={(e) => e.stopPropagation()}
+                        >
+                          {Array.isArray(task.labels) && task.labels.length
+                            ? t("labelEdit")
+                            : t("labelInputPlaceholder") || "+ мітка"}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </details>
               </div>
             ))}
         </div>

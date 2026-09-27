@@ -24,7 +24,7 @@ export default function useMobileMenuPosition(isOpen, { maxWidth = 340 } = {}) {
       const width = Math.min(maxWidth, viewportWidth - gutter * 2);
       const left = Math.max(
         gutter,
-        Math.min(rect.left, viewportWidth - width - gutter)
+        Math.min(rect.left, viewportWidth - width - gutter),
       );
       const top = Math.min(rect.bottom + 8, viewportHeight - 80);
       const maxHeight = Math.max(180, viewportHeight - top - gutter);

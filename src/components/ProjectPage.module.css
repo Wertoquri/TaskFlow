@@ -1,516 +1,519 @@
 .page {
   min-height: 100vh;
-  overflow-x: hidden;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 20px;
-  box-sizing: border-box;
+  padding: 32px clamp(16px, 4vw, 54px) 70px;
+  background: var(--background);
 }
-
 .shell {
-  max-width: 1400px;
+  width: min(100%, 1360px);
   margin: 0 auto;
-  width: 100%;
 }
-
-.hero,
-.panel,
-.tasksCard,
-.activityCard {
-  background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  box-sizing: border-box;
-}
-
 .hero {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
   gap: 20px;
-  padding: 24px;
-  margin-bottom: 20px;
+  margin-bottom: 28px;
 }
-
 .heroCopy {
   min-width: 0;
 }
-
 .heroTitle {
   margin: 0;
-  font-size: 28px;
-  font-weight: 700;
-  color: #1e293b;
+  color: var(--foreground);
+  font-size: clamp(27px, 3vw, 38px);
+  line-height: 1.2;
+  letter-spacing: -0.04em;
+  font-weight: 800;
   overflow-wrap: anywhere;
 }
-
 .heroSubtitle {
-  margin: 8px 0 0;
-  color: #64748b;
+  margin: 9px 0 0;
+  color: var(--muted-foreground);
   font-size: 14px;
-  line-height: 1.45;
+  line-height: 1.5;
 }
-
 .backButton,
 .primaryButton,
 .dangerButton,
 .ghostButton {
-  border: 0;
-  cursor: pointer;
-  font-weight: 600;
-  transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
-}
-
-.backButton {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  flex: 0 0 auto;
-  padding: 12px 24px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: #fff;
-  font-size: 14px;
-  box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
+  gap: 7px;
+  min-height: 40px;
+  padding: 0 13px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  border: 1px solid transparent;
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease;
 }
-
-.backButton:hover {
-  transform: translateY(-2px);
+.backButton,
+.ghostButton {
+  background: var(--card);
+  color: var(--foreground);
+  border-color: var(--border);
 }
-
+.backButton:hover,
+.ghostButton:hover {
+  background: var(--muted);
+}
+.primaryButton {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+.primaryButton:hover {
+  background: #086d67;
+}
+.dangerButton {
+  background: #fff1f2;
+  color: var(--destructive);
+  border-color: #f3d5d8;
+}
+.dangerButton:hover {
+  background: #ffe3e5;
+}
+.successButton {
+  background: var(--secondary);
+  color: var(--secondary-foreground);
+  border-color: #b4dcd7;
+}
+.successButton:hover {
+  background: #d8eeeb;
+}
 .topGrid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 20px;
-  margin-bottom: 30px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin-bottom: 18px;
 }
-
-.panel {
-  padding: 24px;
+.topGrid > div,
+.chatWrap {
   min-width: 0;
 }
-
+.panel,
+.tasksCard,
+.activityCard {
+  min-width: 0;
+  padding: 22px;
+  background: var(--card);
+  color: var(--card-foreground);
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  box-shadow: none;
+}
+.topGrid .panel {
+  height: 100%;
+}
 .chatWrap {
-  margin-bottom: 30px;
+  margin-bottom: 18px;
 }
-
-.tasksCard {
-  padding: 24px;
+.topGrid,
+.chatWrap,
+.tasksCard,
+.activityCard {
+  scroll-margin-top: 22px;
 }
-
 .sectionTitle {
-  margin: 0 0 20px;
-  font-size: 18px;
-  font-weight: 700;
-  color: #1e293b;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 17px;
+  color: var(--foreground);
+  font-size: 17px;
+  font-weight: 750;
+  letter-spacing: -0.02em;
 }
-
+.sectionTitle svg {
+  color: var(--primary);
+  flex: none;
+}
+.panelHeader .sectionTitle {
+  margin: 0;
+}
+.formError,
+.formSuccess {
+  margin-top: 7px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.formError {
+  color: var(--destructive);
+}
+.formSuccess {
+  color: var(--primary);
+}
+.panelNotice {
+  padding: 18px 6px;
+  color: var(--muted-foreground);
+  font-size: 13px;
+  text-align: center;
+}
 .taskForm {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(140px, 160px) minmax(160px, 180px) minmax(120px, 220px);
-  gap: 20px;
-  margin-bottom: 20px;
+  grid-template-columns: minmax(160px, 1.2fr) minmax(180px, 1.8fr) minmax(
+      145px,
+      0.9fr
+    ) minmax(180px, 1.4fr) auto;
   align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
 }
-
+.formField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  color: var(--muted-foreground);
+  font-size: 11px;
+  font-weight: 700;
+}
+.formField input,
+.formField select {
+  width: 100%;
+}
 .field,
 .taskForm input,
-.taskForm select {
-  min-width: 0;
-  width: 100%;
+.taskForm select,
+.inviteForm input,
+.chatInput {
   box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: 41px;
+  padding: 9px 12px;
+  border: 1px solid var(--input);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--foreground);
+  font-size: 13px;
 }
-
+.field:focus,
+.taskForm input:focus,
+.taskForm select:focus,
+.inviteForm input:focus,
+.chatInput:focus {
+  outline: 2px solid var(--ring);
+  outline-offset: 1px;
+}
 .taskAssigneeRow {
   display: flex;
-  gap: 12px;
-  align-items: center;
+  align-items: end;
+  gap: 7px;
   min-width: 0;
 }
-
-.taskAssigneeSelect {
-  min-width: 0;
+.taskAssigneeRow .formField {
   flex: 1;
 }
-
+.taskAssigneeSelect {
+  flex: 1;
+  min-width: 0;
+}
 .addButtonWrap {
   justify-self: end;
 }
-
-.primaryButton {
-  padding: 10px 20px;
-  border-radius: 8px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: #fff;
-  font-size: 14px;
-  box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
-  white-space: nowrap;
-}
-
-.ghostButton {
-  padding: 10px 14px;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  background: #fff;
-  color: #334155;
-}
-
-.dangerButton {
-  padding: 8px 16px;
-  border-radius: 8px;
-  background: #ef4444;
-  color: #fff;
-  font-size: 13px;
-}
-
-.successButton {
-  background: #10b981;
-}
-
 .taskList {
-  list-style: none;
-  padding: 0;
-  margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 9px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
-
 .taskItem {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  gap: 16px;
-  padding: 16px;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  background: #f8fafc;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 13px 15px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--card);
 }
-
 .taskText {
   min-width: 0;
   overflow-wrap: anywhere;
+  font-size: 13px;
 }
-
 .taskDescription {
-  color: #64748b;
-  margin-left: 12px;
-  font-size: 14px;
-  overflow-wrap: anywhere;
+  display: block;
+  margin-top: 3px;
+  color: var(--muted-foreground);
+  font-size: 12px;
+  line-height: 1.5;
 }
-
 .taskActions {
   display: flex;
-  gap: 8px;
-  flex: 0 0 auto;
+  align-items: center;
+  gap: 7px;
+  flex: none;
 }
-
 .activityCard {
-  margin-top: 20px;
-  padding: 24px;
+  margin-top: 18px;
 }
-
 .activityList {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
 }
-
 .activityActions {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
+  margin-bottom: 4px;
 }
-
 .activityItem {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
   align-items: center;
-  gap: 10px;
-  padding: 12px;
+  padding: 11px 13px;
+  border: 1px solid var(--border);
   border-radius: 8px;
-  background: #f8fafc;
 }
-
 .activityBody {
   min-width: 0;
   overflow-wrap: anywhere;
-}
-
-.activityTime {
-  color: #94a3b8;
+  color: var(--foreground);
   font-size: 12px;
+  line-height: 1.6;
+}
+.activityTime {
+  color: var(--muted-foreground);
+  font-size: 11px;
   text-align: right;
 }
-
 .panelHeader {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 15px;
 }
-
 .inviteForm {
   display: flex;
-  gap: 8px;
   align-items: flex-start;
+  gap: 8px;
 }
-
 .inviteInputWrap {
   flex: 1;
   min-width: 0;
 }
-
 .memberCard {
-  padding: 24px;
-  margin-bottom: 30px;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  background: #f8fafc;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  margin: 0 0 10px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--card);
 }
-
 .memberCardEditing {
-  background: #fffbeb;
+  border-color: var(--primary);
+  background: var(--secondary);
 }
-
+.memberList {
+  margin-top: 12px;
+}
+.memberRole {
+  margin-top: 3px;
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
 .memberTop {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
 }
-
 .memberInfo {
   min-width: 0;
 }
-
 .memberName {
-  font-weight: 600;
-  font-size: 15px;
-  color: #1e293b;
-  margin-bottom: 4px;
+  color: var(--foreground);
+  font-size: 13px;
+  font-weight: 750;
   overflow-wrap: anywhere;
 }
-
 .memberActions,
 .editActions {
   display: flex;
-  gap: 10px;
   align-items: center;
-  flex: 0 0 auto;
+  gap: 7px;
 }
-
 .permissionsGrid {
   display: flex;
-  gap: 20px;
-  align-items: center;
   flex-wrap: wrap;
-  padding-top: 12px;
-  border-top: 1px solid #e2e8f0;
+  gap: 11px;
+  padding-top: 11px;
+  border-top: 1px solid var(--border);
 }
-
 .permissionLabel {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  white-space: nowrap;
+  gap: 5px;
+  color: var(--muted-foreground);
+  font-size: 11px;
 }
-
 .chatPanel {
   display: flex;
   flex-direction: column;
-  height: 500px;
+  height: 450px;
 }
-
 .messagesPane {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   margin-bottom: 12px;
-  padding: 8px;
-  background: #f8fafc;
-  border-radius: 6px;
+  padding: 13px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--background);
 }
-
 .messageRow {
   display: flex;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
-
 .messageRowOwn {
   justify-content: flex-end;
 }
-
 .messageRowOther {
   justify-content: flex-start;
 }
-
 .messageInner {
   display: flex;
   align-items: flex-start;
   gap: 8px;
   max-width: 100%;
 }
-
 .messageBubble {
-  max-width: min(70%, 42rem);
-  padding: 10px 14px;
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  position: relative;
+  max-width: min(70vw, 42rem);
+  padding: 10px 13px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
   overflow-wrap: anywhere;
+  font-size: 12px;
 }
-
 .messageBubbleOwn {
-  background: #3b82f6;
-  color: #fff;
+  background: var(--secondary);
+  color: var(--secondary-foreground);
 }
-
 .messageBubbleOther {
-  background: #fff;
-  color: #1e293b;
+  background: var(--card);
+  color: var(--foreground);
 }
-
 .messageMeta {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
   gap: 8px;
-  min-width: 0;
 }
-
+.messageText {
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.messageMeta {
+  margin-top: 6px;
+  color: var(--muted-foreground);
+  font-size: 10px;
+}
+.messageActions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 8px;
+}
+.messageActions button {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--muted-foreground);
+}
+.messageActions button:hover {
+  background: var(--muted);
+  color: var(--foreground);
+}
+.chatAvatar {
+  width: 28px;
+  height: 28px;
+  flex: none;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.chatAuthor {
+  margin-bottom: 4px;
+  font-size: 11px;
+  font-weight: 700;
+}
 .chatComposer {
   display: flex;
-  gap: 8px;
   align-items: center;
+  gap: 8px;
 }
-
 .chatInput {
   flex: 1;
-  min-width: 0;
 }
-
-@media (max-width: 900px) {
-  .topGrid {
-    grid-template-columns: 1fr;
-  }
-
+.chatComposer .primaryButton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+@media (max-width: 1600px) {
   .taskForm {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-
   .addButtonWrap {
     justify-self: stretch;
   }
-
-  .addButtonWrap .primaryButton {
+  .addButtonWrap button {
     width: 100%;
   }
 }
-
-@media (max-width: 640px) {
-  .page {
-    padding: 12px;
+@media (max-width: 750px) {
+  .topGrid {
+    grid-template-columns: 1fr;
   }
-
-  .hero,
+  .hero {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .taskForm {
+    grid-template-columns: 1fr;
+  }
+  .taskItem {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .taskActions {
+    width: 100%;
+  }
+  .taskActions button {
+    flex: 1;
+  }
+}
+@media (max-width: 500px) {
+  .page {
+    padding: 22px 13px 55px;
+  }
   .panel,
   .tasksCard,
   .activityCard {
-    padding: 24px 12px !important;
+    padding: 16px;
   }
-
-  .hero {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .heroTitle {
-    font-size: clamp(24px, 8vw, 28px);
-    line-height: 1.12;
-  }
-
-  .backButton,
-  .primaryButton,
-  .ghostButton,
-  .dangerButton {
-    width: 100%;
-    min-height: 44px;
-  }
-
-  .topGrid,
-  .chatWrap {
-    margin-bottom: 24px;
-  }
-
-  .taskForm {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-
-  .taskAssigneeRow,
-  .taskItem,
-  .taskActions,
-  .activityActions,
-  .inviteForm,
-  .memberTop,
-  .memberActions,
-  .editActions,
-  .chatComposer {
-    align-items: stretch;
-    flex-direction: column !important;
-  }
-
-  .taskDescription {
-    display: block;
-    margin: 6px 0 0;
-  }
-
   .activityItem {
     grid-template-columns: 1fr;
   }
-
   .activityTime {
     text-align: left;
   }
-
-  .panelHeader {
-    align-items: stretch;
+  .inviteForm {
     flex-direction: column;
   }
-
-  .memberCard {
-    padding: 14px !important;
-    margin-bottom: 16px !important;
-  }
-
-  .permissionsGrid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-
-  .permissionLabel {
-    white-space: normal;
-  }
-
-  .chatPanel {
-    height: min(500px, 62vh) !important;
-  }
-
-  .messagesPane {
-    padding: 10px;
-  }
-
-  .messageBubble {
-    max-width: calc(100vw - 92px);
-  }
-
-  .messageMeta {
-    align-items: flex-start;
-    flex-direction: column;
+  .inviteInputWrap,
+  .inviteForm button {
+    width: 100%;
   }
 }

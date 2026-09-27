@@ -3,9 +3,8 @@ const { getQuery: q } = require('../db');
 const { createNotification } = require('../helpers/notifications');
 const { mediaUrl } = require('../services/mediaStorage');
 
-// ---------------- CREATE TASK ----------------
 const createTask = async (req, res) => {
-    const { project_id, title, description, status, priority, labels } = req.body;
+    const { project_id, title, description, status, priority, labels, assigned_to, due_date } = req.body;
     const userId = req.user.id;
     if (!project_id || !title) {
         return res.status(400).json({ message: "Project ID and title are required" });
@@ -20,10 +19,21 @@ const createTask = async (req, res) => {
         const canCreate = !!(perms && (perms.create === true || perms.can_create === true));
         const isAdmin = rows.length && rows[0].role === 'admin';
         const allowed = isOwner || isAdmin || canCreate;
-        console.log('CREATE TASK DEBUG:', { userId, project_id, owner_id: proj[0]?.owner_id, isOwner, role: rows[0]?.role, isAdmin, perms, canCreate, allowed });
         if (!allowed) return res.status(403).json({ message: 'Not allowed to create tasks' });
 
-        const insert = await run('INSERT INTO tasks (project_id, title, description, status, priority, owner_id, created_by, labels) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [
+        const assigneeId = assigned_to === null || assigned_to === undefined || assigned_to === '' ? null : Number(assigned_to);
+        if (assigneeId !== null) {
+            if (!Number.isInteger(assigneeId) || assigneeId <= 0) return res.status(400).json({ message: 'Invalid assignee' });
+            const assigneeMembership = await q('SELECT 1 FROM project_members WHERE project_id = ? AND user_id = ?', [project_id, assigneeId]);
+            if (!assigneeMembership.length && String(proj[0].owner_id) !== String(assigneeId)) {
+                return res.status(400).json({ message: 'Assignee must be a project member' });
+            }
+        }
+        if (due_date && (typeof due_date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(due_date) || Number.isNaN(Date.parse(due_date)))) {
+            return res.status(400).json({ message: 'Invalid due date' });
+        }
+
+        const insert = await run('INSERT INTO tasks (project_id, title, description, status, priority, owner_id, created_by, labels, assigned_to, due_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
             project_id,
             title,
             description || null,
@@ -31,17 +41,21 @@ const createTask = async (req, res) => {
             priority || 'medium',
             userId,
             userId,
-            labels ? JSON.stringify(labels) : null
+            labels ? JSON.stringify(labels) : null,
+            assigneeId,
+            due_date || null
         ]);
         const io = req.app.get('io');
-        io && io.emit('task-created', {
+        io && io.to(`project:${project_id}`).emit('task-created', {
             id: insert.insertId,
             project_id,
             title,
             description,
             status: status || 'pending',
             priority: priority || 'medium',
-            labels: labels || []
+            labels: labels || [],
+            assigned_to: assigneeId,
+            due_date: due_date || null
         });
         res.status(201).json({ message: "Task created", taskId: insert.insertId });
     } catch (err) {
@@ -50,7 +64,6 @@ const createTask = async (req, res) => {
     }
 };
 
-// ---------------- GET TASKS BY PROJECT ----------------
 const getTasks = async (req, res) => {
     const { project_id } = req.params;
     const tasksQuery = 'SELECT * FROM tasks WHERE project_id = ? ORDER BY id ASC';
@@ -91,7 +104,6 @@ const getTasks = async (req, res) => {
     }
 };
 
-// ---------------- UPDATE TASK ----------------
 const updateTask = async (req, res) => {
     const { id } = req.params;
     const userId = req.user.id;
@@ -108,16 +120,32 @@ const updateTask = async (req, res) => {
     const hasEdit = !!(perms && (perms.edit === true || perms.can_edit === true));
     const isAdmin = rows.length && rows[0].role === 'admin';
     const canEdit = isOwner || isAdmin || hasEdit;
-    console.log('UPDATE TASK DEBUG:', { userId, projectId, owner_id: proj[0]?.owner_id, isOwner, role: rows[0]?.role, isAdmin, perms, hasEdit, canEdit, rowsLength: rows.length });
     if (!canEdit) return res.status(403).json({ message: 'Not allowed to edit tasks' });
+
+    const normalizedAssignee = assigned_to === undefined ? undefined :
+        (assigned_to === null || assigned_to === '' ? null : Number(assigned_to));
+    if (normalizedAssignee !== undefined && normalizedAssignee !== null) {
+        const assigneeId = normalizedAssignee;
+        if (!Number.isInteger(assigneeId) || assigneeId <= 0) {
+            return res.status(400).json({ message: 'Invalid assignee' });
+        }
+        const assigneeAccess = await q('SELECT 1 FROM project_members WHERE project_id = ? AND user_id = ?', [projectId, assigneeId]);
+        if (!assigneeAccess.length && String(proj[0].owner_id) !== String(assigneeId)) {
+            return res.status(400).json({ message: 'Assignee must be a project member' });
+        }
+    }
+    const normalizedDueDate = due_date === '' ? null : due_date;
+    if (normalizedDueDate && (typeof normalizedDueDate !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(normalizedDueDate) || Number.isNaN(Date.parse(normalizedDueDate)))) {
+        return res.status(400).json({ message: 'Invalid due date' });
+    }
 
     // Build dynamic SET clause only for provided fields
     const sets = [];
     const params = [];
     if (title !== undefined) { sets.push('title = ?'); params.push(title); }
     if (description !== undefined) { sets.push('description = ?'); params.push(description); }
-    if (assigned_to !== undefined) { sets.push('assigned_to = ?'); params.push(assigned_to); }
-    if (due_date !== undefined) { sets.push('due_date = ?'); params.push(due_date); }
+    if (normalizedAssignee !== undefined) { sets.push('assigned_to = ?'); params.push(normalizedAssignee); }
+    if (normalizedDueDate !== undefined) { sets.push('due_date = ?'); params.push(normalizedDueDate); }
     if (status !== undefined) { sets.push('status = ?'); params.push(status); }
     if (priority !== undefined) { sets.push('priority = ?'); params.push(priority); }
     if (labels !== undefined) { sets.push('labels = ?'); params.push(labels ? JSON.stringify(labels) : null); }
@@ -137,21 +165,21 @@ const updateTask = async (req, res) => {
         
         // Notify assigned user if task was assigned to someone
         const io = req.app.get('io');
-        if (assigned_to && assigned_to !== userId && io) {
+        if (normalizedAssignee && String(normalizedAssignee) !== String(userId) && io) {
             await createNotification(
-                assigned_to,
+                normalizedAssignee,
                 'task_assigned',
                 { task_id: id, title, project_id: projectId, assigned_by: userId },
                 io
             );
         }
         
-        io && io.emit('task-updated', {
+        io && io.to(`project:${projectId}`).emit('task-updated', {
             id,
             ...(title !== undefined ? { title } : {}),
             ...(description !== undefined ? { description } : {}),
-            ...(assigned_to !== undefined ? { assigned_to } : {}),
-            ...(due_date !== undefined ? { due_date } : {}),
+            ...(normalizedAssignee !== undefined ? { assigned_to: normalizedAssignee } : {}),
+            ...(normalizedDueDate !== undefined ? { due_date: normalizedDueDate } : {}),
             ...(status !== undefined ? { status } : {}),
             ...(priority !== undefined ? { priority } : {}),
             ...(labels !== undefined ? { labels: labels || [] } : {})
@@ -177,7 +205,7 @@ const updateTask = async (req, res) => {
                         metadata: JSON.parse(meta),
                         created_at: new Date().toISOString(),
                     };
-                    io && io.emit('task-activity', activity);
+                    io && io.to(`project:${projectId}`).emit('task-activity', activity);
                 } catch (e) {
                     if (e && e.code === 'ER_NO_SUCH_TABLE') {
                         console.warn('task_activity table missing; skipping activity log for task_updated');
@@ -192,7 +220,6 @@ const updateTask = async (req, res) => {
     }
 };
 
-// ---------------- DELETE TASK ----------------
 const deleteTask = async (req, res) => {
     const { id } = req.params;
     const userId = req.user.id;
@@ -208,7 +235,6 @@ const deleteTask = async (req, res) => {
     const hasDelete = !!(perms && (perms.delete === true || perms.can_delete === true));
     const isAdmin = rows.length && rows[0].role === 'admin';
     const canDelete = isOwner || isAdmin || hasDelete;
-    console.log('DELETE TASK DEBUG:', { userId, projectId, owner_id: proj[0]?.owner_id, isOwner, role: rows[0]?.role, isAdmin, perms, hasDelete, canDelete });
     if (!canDelete) return res.status(403).json({ message: 'Not allowed to delete tasks' });
     const query = 'DELETE FROM tasks WHERE id = ?';
     try {
@@ -217,7 +243,7 @@ const deleteTask = async (req, res) => {
             return res.status(404).json({ message: 'Task not found' });
         }
         const io = req.app.get('io');
-        io && io.emit('task-deleted', { id });
+        io && io.to(`project:${projectId}`).emit('task-deleted', { id });
         res.status(200).json({ message: 'Task deleted' });
     } catch (err) {
         console.error('Delete task error:', err);

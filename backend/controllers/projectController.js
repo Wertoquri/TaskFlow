@@ -20,7 +20,6 @@ const getProjects = async (req, res) => {
         res.status(500).json({ message: 'Server error', error });
     }
 };
-// ---------------- CREATE PROJECT ----------------
 const createProject = async (req, res) => {
     const { name, description } = req.body;
     const ownerId = req.user?.id;
@@ -46,13 +45,21 @@ const createProject = async (req, res) => {
         res.status(500).json({ message: 'Server error', error: err });
     }
 };
-// ---------------- UPDATE PROJECT ----------------
 const updateProject = async (req, res) => {
-    const { id, name, description } = req.body;
+    const { id } = req.params;
+    const { name, description } = req.body;
+
+    if (!req.projectAccess?.admin) {
+        return res.status(403).json({ message: 'Only project owner or admins can edit the project' });
+    }
+    if (typeof name !== 'string' || !name.trim() || name.trim().length > 255 ||
+        (description !== undefined && description !== null && typeof description !== 'string')) {
+        return res.status(400).json({ message: 'Invalid project details' });
+    }
 
     const query = 'UPDATE projects SET name = ?, description = ?, updated_at = NOW() WHERE id = ?';
     try {
-        const results = await run(query, [name, description, id]);
+        const results = await run(query, [name.trim(), description ?? null, id]);
         if (results.affectedRows === 0) {
             return res.status(404).json({ message: 'Project not found' });
         }
@@ -78,7 +85,6 @@ const deleteProject = async (req, res) => {
             return res.status(404).json({ message: 'Project not found' });
         }
         const isOwner = proj[0].owner_id === userId;
-        console.log('DELETE PROJECT DEBUG:', { userId, projectId: id, owner_id: proj[0].owner_id, isOwner });
         
         if (!isOwner) {
             return res.status(403).json({ message: 'Only project owner can delete the project' });

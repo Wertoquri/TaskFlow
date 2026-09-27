@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
-import io from 'socket.io-client';
-import { useI18n } from '../context/I18nContext.jsx';
-import { SOCKET_URL } from '../api';
+import { useEffect, useState } from "react";
+import io from "socket.io-client";
+import { useI18n } from "../context/I18nContext.jsx";
+import { SOCKET_URL } from "../api";
 
 const socket = io(SOCKET_URL);
 
@@ -10,24 +10,26 @@ const Tasks = () => {
   const { t } = useI18n();
 
   useEffect(() => {
-    socket.on('task-updated', (updatedTask) => {
+    socket.on("task-updated", (updatedTask) => {
       setTasks((prevTasks) => {
         return prevTasks.map((task) =>
-          task.id === updatedTask.id ? updatedTask : task
+          task.id === updatedTask.id ? updatedTask : task,
         );
       });
     });
 
     // Clean up the socket connection
-    return () => socket.off('task-updated');
+    return () => socket.off("task-updated");
   }, []);
 
   return (
     <div>
-      <h3>{t('tasksTitle')}</h3>
+      <h3>{t("tasksTitle")}</h3>
       <ul>
         {tasks.map((task) => (
-          <li key={task.id}>{task.title} - {task.status}</li>
+          <li key={task.id}>
+            {task.title} - {task.status}
+          </li>
         ))}
       </ul>
     </div>

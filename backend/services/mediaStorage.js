@@ -1,8 +1,8 @@
-const { v2: cloudinary } = require('cloudinary');
+const { v2: cloudinary } = require("cloudinary");
 
 function requireConfiguration() {
   if (!process.env.CLOUDINARY_URL) {
-    const error = new Error('Persistent media storage is not configured.');
+    const error = new Error("Persistent media storage is not configured.");
     error.statusCode = 503;
     throw error;
   }
@@ -10,25 +10,32 @@ function requireConfiguration() {
 
 function uploadBuffer(file, folder) {
   requireConfiguration();
-  const resourceType = file.mimetype?.startsWith('image/') ? 'image' : 'raw';
+  const resourceType = file.mimetype?.startsWith("image/") ? "image" : "raw";
 
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
-      { folder, resource_type: resourceType, use_filename: false, unique_filename: true },
+      {
+        folder,
+        resource_type: resourceType,
+        use_filename: false,
+        unique_filename: true,
+      },
       (error, result) => {
         if (error) return reject(error);
         resolve(result.secure_url);
-      }
+      },
     );
     stream.end(file.buffer);
   });
 }
 
 function parseAsset(assetUrl) {
-  if (!assetUrl || !assetUrl.includes('res.cloudinary.com')) return null;
+  if (!assetUrl || !assetUrl.includes("res.cloudinary.com")) return null;
   try {
     const { pathname } = new URL(assetUrl);
-    const match = pathname.match(/\/(image|raw)\/upload\/(?:v\d+\/)?(.+)\.[^/.]+$/);
+    const match = pathname.match(
+      /\/(image|raw)\/upload\/(?:v\d+\/)?(.+)\.[^/.]+$/,
+    );
     return match ? { resourceType: match[1], publicId: match[2] } : null;
   } catch {
     return null;
@@ -45,7 +52,9 @@ async function deleteMedia(assetUrl) {
 }
 
 function mediaUrl(value, legacyFolder) {
-  return /^https?:\/\//i.test(value || '') ? value : `/uploads/${legacyFolder}/${value}`;
+  return /^https?:\/\//i.test(value || "")
+    ? value
+    : `/uploads/${legacyFolder}/${value}`;
 }
 
 module.exports = { uploadBuffer, deleteMedia, mediaUrl };

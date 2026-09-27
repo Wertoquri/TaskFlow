@@ -1,8 +1,8 @@
 import React, { createContext, useState, useContext, useEffect } from "react";
 import io from "socket.io-client";
 import { useNavigate } from "react-router-dom";
-import axios from 'axios';
-import { getMe, SOCKET_URL } from '../api';
+import axios from "axios";
+import { getMe, SOCKET_URL } from "../api";
 
 export const AuthContext = createContext();
 
@@ -14,7 +14,7 @@ export const AuthProvider = ({ children }) => {
 
   function isTokenExpired(t) {
     try {
-      const payload = JSON.parse(atob(t.split('.')[1]));
+      const payload = JSON.parse(atob(t.split(".")[1]));
       const nowSec = Math.floor(Date.now() / 1000);
       return payload.exp && payload.exp <= nowSec;
     } catch {
@@ -28,10 +28,10 @@ export const AuthProvider = ({ children }) => {
     axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
     if (isTokenExpired(token)) {
       // Автоматичний вихід при простроченому токені
-      localStorage.removeItem('token');
+      localStorage.removeItem("token");
       setToken(null);
       setUser(null);
-      navigate('/login');
+      navigate("/login");
       return;
     }
     (async () => {
@@ -40,10 +40,10 @@ export const AuthProvider = ({ children }) => {
         setUser(u);
       } catch (e) {
         // if server returns 401/403, logout
-        localStorage.removeItem('token');
+        localStorage.removeItem("token");
         setToken(null);
         setUser(null);
-        navigate('/login');
+        navigate("/login");
       }
     })();
   }, [token]);
@@ -90,13 +90,13 @@ export const AuthProvider = ({ children }) => {
       (res) => res,
       (error) => {
         if (error?.response?.status === 401) {
-          localStorage.removeItem('token');
+          localStorage.removeItem("token");
           setToken(null);
           setUser(null);
-          navigate('/login');
+          navigate("/login");
         }
         return Promise.reject(error);
-      }
+      },
     );
     return () => axios.interceptors.response.eject(id);
   }, [navigate]);
@@ -114,7 +114,9 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, socket, refreshUser }}>
+    <AuthContext.Provider
+      value={{ user, token, login, logout, socket, refreshUser }}
+    >
       {children}
     </AuthContext.Provider>
   );

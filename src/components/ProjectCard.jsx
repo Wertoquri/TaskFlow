@@ -1,7 +1,26 @@
-import React from "react";
 import { useNavigate } from "react-router-dom";
-import styles from "./ProjectCard.module.css";
+import {
+  CalendarDays,
+  ChevronDown,
+  Pencil,
+  Trash2,
+  UsersRound,
+} from "lucide-react";
 import { useI18n } from "../context/I18nContext.jsx";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import styles from "./ProjectCard.module.css";
+
+const cleanLabel = (value) =>
+  String(value || "").replace(/^[^\p{L}\p{N}]+/u, "");
 
 export default function ProjectCard({
   id,
@@ -9,40 +28,98 @@ export default function ProjectCard({
   description,
   created_at,
   updated_at,
+  selected,
   onEdit,
   onDelete,
   onOpen,
+  onOpenTasks,
 }) {
   const navigate = useNavigate();
-  const { t } = useI18n();
+  const { t, language } = useI18n();
 
-  const formatDate = (dateStr) => {
-    if (!dateStr) return '—';
-    const d = new Date(dateStr);
-    return isNaN(d.getTime()) ? '—' : d.toLocaleDateString();
-  };
+  function formatDate(value) {
+    if (!value) return "—";
+    const date = new Date(value);
+    return Number.isNaN(date.getTime())
+      ? "—"
+      : date.toLocaleDateString(language === "en" ? "en-US" : "uk-UA", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        });
+  }
 
   return (
-    <div className={styles.card} onClick={() => onOpen && onOpen(id)}>
-      <h3 className={styles.title}>{name}</h3>
-      <div className={styles.description}>
-        {description || t('noDescription')}
-      </div>
-      <div className={styles.meta}>
-        <div>{t('created')}: {formatDate(created_at)}</div>
-        <div>{t('updated')}: {formatDate(updated_at)}</div>
-      </div>
-      <div className={styles.actions} onClick={(e) => e.stopPropagation()}>
-        <button onClick={() => navigate(`/project/${id}`)} className={styles.editButton}>
-          {t('participants')}
-        </button>
-        <button onClick={() => onEdit(id)} className={styles.editButton}>
-          {t('edit')}
-        </button>
-        <button onClick={() => onDelete(id)} className={styles.deleteButton}>
-          {t('delete')}
-        </button>
-      </div>
-    </div>
+    <Card className={`${styles.card} ${selected ? styles.selected : ""}`}>
+      <CardHeader className={styles.header}>
+        <CardTitle className={styles.title}>
+          <button
+            type="button"
+            aria-pressed={selected}
+            onClick={() => onOpen?.(id)}
+          >
+            {name}
+          </button>
+        </CardTitle>
+        <CardAction>
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            className={styles.tasksButton}
+            onClick={onOpenTasks}
+          >
+            {cleanLabel(t("tasksTitle"))}
+            <ChevronDown data-icon="inline-end" />
+          </Button>
+        </CardAction>
+        <CardDescription className={styles.description}>
+          {description || t("noDescription")}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className={styles.meta}>
+        <div>
+          <CalendarDays aria-hidden="true" />
+          <span>
+            {cleanLabel(t("created"))}: {formatDate(created_at)}
+          </span>
+        </div>
+        <div>
+          <CalendarDays aria-hidden="true" />
+          <span>
+            {cleanLabel(t("updated"))}: {formatDate(updated_at)}
+          </span>
+        </div>
+      </CardContent>
+      <CardFooter className={styles.actions}>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => navigate(`/project/${id}`)}
+        >
+          <UsersRound data-icon="inline-start" />
+          {cleanLabel(t("participants"))}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => onEdit(id)}
+        >
+          <Pencil data-icon="inline-start" />
+          {cleanLabel(t("edit"))}
+        </Button>
+        <Button
+          type="button"
+          variant="destructive"
+          size="sm"
+          onClick={() => onDelete(id)}
+        >
+          <Trash2 data-icon="inline-start" />
+          {cleanLabel(t("delete"))}
+        </Button>
+      </CardFooter>
+    </Card>
   );
 }

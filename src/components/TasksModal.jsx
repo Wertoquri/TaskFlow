@@ -1,9 +1,33 @@
 import React, { useEffect, useState } from "react";
-import { getTasksByProject, createTask, updateTask, deleteTask, uploadTaskAttachment, deleteTaskAttachment, getTaskActivity, getProjectActivity, SOCKET_URL } from "../api";
+import {
+  getTasksByProject,
+  createTask,
+  updateTask,
+  deleteTask,
+  uploadTaskAttachment,
+  deleteTaskAttachment,
+  getTaskActivity,
+  getProjectActivity,
+  SOCKET_URL,
+} from "../api";
 import Toast from "./Toast";
 import styles from "./TasksModal.module.css";
 import { useI18n } from "../context/I18nContext.jsx";
-import io from 'socket.io-client';
+import io from "socket.io-client";
+import {
+  ClipboardList,
+  Clock3,
+  FileText,
+  Paperclip,
+  Pencil,
+  Plus,
+  Tag,
+  Trash2,
+  X,
+} from "lucide-react";
+
+const cleanLabel = (value) =>
+  String(value || "").replace(/^[^\p{L}\p{N}]+/u, "");
 
 export default function TasksModal({ open, onClose, project, filters }) {
   const { t } = useI18n();
@@ -30,7 +54,7 @@ export default function TasksModal({ open, onClose, project, filters }) {
         const data = await getTasksByProject(project.id, token);
         setTasks(data);
       } catch (e) {
-        setError(t('loadTasksError'));
+        setError(t("loadTasksError"));
       } finally {
         setLoading(false);
       }
@@ -51,21 +75,22 @@ export default function TasksModal({ open, onClose, project, filters }) {
   useEffect(() => {
     // GSAP анімація для модального вікна
     if (open && window.gsap) {
-      const modal = document.querySelector('[data-tasks-modal]');
+      const modal = document.querySelector("[data-tasks-modal]");
       if (modal) {
-        window.gsap.fromTo(modal, 
+        window.gsap.fromTo(
+          modal,
           {
             scale: 0.95,
             opacity: 0,
-            y: 20
+            y: 20,
           },
           {
             scale: 1,
             opacity: 1,
             y: 0,
             duration: 0.3,
-            ease: "power2.out"
-          }
+            ease: "power2.out",
+          },
         );
       }
     }
@@ -80,8 +105,10 @@ export default function TasksModal({ open, onClose, project, filters }) {
       const taskId = String(payload.task_id);
       setTasks((prev) =>
         prev.map((t) =>
-          String(t.id) === taskId ? { ...t, attachments: [payload, ...(t.attachments || [])] } : t
-        )
+          String(t.id) === taskId
+            ? { ...t, attachments: [payload, ...(t.attachments || [])] }
+            : t,
+        ),
       );
     }
 
@@ -90,37 +117,55 @@ export default function TasksModal({ open, onClose, project, filters }) {
       const attId = Number(payload.id);
       setTasks((prev) =>
         prev.map((t) =>
-          String(t.id) === taskId ? { ...t, attachments: (t.attachments || []).filter((a) => a.id !== attId) } : t
-        )
+          String(t.id) === taskId
+            ? {
+                ...t,
+                attachments: (t.attachments || []).filter(
+                  (a) => a.id !== attId,
+                ),
+              }
+            : t,
+        ),
       );
     }
 
     function onTaskActivity(payload) {
       // payload should include task_id and activity record
       try {
-        const taskId = String(payload.task_id || payload.taskId || payload.task_id);
+        const taskId = String(
+          payload.task_id || payload.taskId || payload.task_id,
+        );
         const activity = payload.activity || payload;
         setActivityMap((prev) => {
           const key = String(taskId);
-          const prevEntry = prev?.[key] || { open: false, loading: false, items: [], page: 1, hasMore: false };
+          const prevEntry = prev?.[key] || {
+            open: false,
+            loading: false,
+            items: [],
+            page: 1,
+            hasMore: false,
+          };
           return {
             ...(prev || {}),
-            [key]: { ...prevEntry, items: [activity, ...(prevEntry.items || [])] },
+            [key]: {
+              ...prevEntry,
+              items: [activity, ...(prevEntry.items || [])],
+            },
           };
         });
       } catch (e) {
-        console.error('task-activity handler error', e);
+        console.error("task-activity handler error", e);
       }
     }
 
-    s.on('task-attachment-added', onAttachmentAdded);
-    s.on('task-attachment-deleted', onAttachmentDeleted);
-    s.on('task-activity', onTaskActivity);
+    s.on("task-attachment-added", onAttachmentAdded);
+    s.on("task-attachment-deleted", onAttachmentDeleted);
+    s.on("task-activity", onTaskActivity);
 
     return () => {
-      s.off('task-attachment-added', onAttachmentAdded);
-      s.off('task-attachment-deleted', onAttachmentDeleted);
-      s.off('task-activity', onTaskActivity);
+      s.off("task-attachment-added", onAttachmentAdded);
+      s.off("task-attachment-deleted", onAttachmentDeleted);
+      s.off("task-activity", onTaskActivity);
       s.disconnect();
     };
   }, []);
@@ -152,7 +197,7 @@ export default function TasksModal({ open, onClose, project, filters }) {
           priority,
           labels: parseLabels(labelsInput),
         },
-        token
+        token,
       );
       // sync: fetch authoritative list
       const data = await getTasksByProject(project.id, token);
@@ -160,7 +205,7 @@ export default function TasksModal({ open, onClose, project, filters }) {
     } catch (e) {
       // revert optimistic
       setTasks((prev) => prev.filter((t) => !String(t.id).startsWith("temp-")));
-      setToast({ message: t('createTaskError'), type: "error" });
+      setToast({ message: t("createTaskError"), type: "error" });
     }
   }
 
@@ -174,8 +219,8 @@ export default function TasksModal({ open, onClose, project, filters }) {
       Array.isArray(task.labels)
         ? task.labels.join(", ")
         : task.labels
-        ? tryParseLabelsToString(t.labels)
-        : ""
+          ? tryParseLabelsToString(t.labels)
+          : "",
     );
   }
 
@@ -196,8 +241,8 @@ export default function TasksModal({ open, onClose, project, filters }) {
       // optimistic update
       setTasks((prev) =>
         prev.map((t) =>
-          t.id === editTask.id ? { ...t, title, description, status } : t
-        )
+          t.id === editTask.id ? { ...t, title, description, status } : t,
+        ),
       );
       const payload = {
         title,
@@ -206,7 +251,10 @@ export default function TasksModal({ open, onClose, project, filters }) {
         priority,
         labels: parseLabels(labelsInput),
       };
-      console.log('updateTask (handleUpdate):', { taskId: editTask.id, payload });
+      console.log("updateTask (handleUpdate):", {
+        taskId: editTask.id,
+        payload,
+      });
       await updateTask(editTask.id, payload, token);
       cancelEdit();
       // sync
@@ -214,12 +262,12 @@ export default function TasksModal({ open, onClose, project, filters }) {
       setTasks(data);
       // Прибрано сповіщення про оновлення завдання за запитом користувача
     } catch (e) {
-      setToast({ message: t('updateTaskError'), type: "error" });
+      setToast({ message: t("updateTaskError"), type: "error" });
     }
   }
 
   async function handleDelete(id) {
-    if (!confirm(t('confirmDeleteThisTask'))) return;
+    if (!confirm(t("confirmDeleteThisTask"))) return;
     try {
       const token = localStorage.getItem("token");
       // optimistic remove
@@ -229,11 +277,11 @@ export default function TasksModal({ open, onClose, project, filters }) {
       // sync
       const data = await getTasksByProject(project.id, token);
       setTasks(data);
-      setToast({ message: t('taskDeleted'), type: "success" });
+      setToast({ message: t("taskDeleted"), type: "success" });
     } catch (e) {
       // revert
       setTasks((prev) => prev);
-      setToast({ message: t('deleteTaskError'), type: "error" });
+      setToast({ message: t("deleteTaskError"), type: "error" });
     }
   }
 
@@ -270,12 +318,22 @@ export default function TasksModal({ open, onClose, project, filters }) {
         setUploadingFor(task.id);
         const { attachment } = await uploadTaskAttachment(task.id, file, token);
         setTasks((prev) =>
-          prev.map((x) => (x.id === task.id ? { ...x, attachments: [attachment, ...(x.attachments || [])] } : x))
+          prev.map((x) =>
+            x.id === task.id
+              ? { ...x, attachments: [attachment, ...(x.attachments || [])] }
+              : x,
+          ),
         );
-        setToast({ message: t('attachmentUploaded') || 'Attachment uploaded', type: 'success' });
+        setToast({
+          message: t("attachmentUploaded") || "Attachment uploaded",
+          type: "success",
+        });
       } catch (err) {
-        console.error('Upload attachment error', err);
-        setToast({ message: t('attachmentUploadError') || 'Attachment upload error', type: 'error' });
+        console.error("Upload attachment error", err);
+        setToast({
+          message: t("attachmentUploadError") || "Attachment upload error",
+          type: "error",
+        });
       } finally {
         setUploadingFor(null);
       }
@@ -286,17 +344,45 @@ export default function TasksModal({ open, onClose, project, filters }) {
   async function toggleActivity(taskId) {
     const key = String(taskId);
     const prevEntry = activityMap[key];
-    const willOpen = !(prevEntry?.open);
-    setActivityMap((prev) => ({ ...(prev || {}), [key]: { ...(prev?.[key] || {}), open: willOpen } }));
-    if (willOpen && (!prevEntry || (!prevEntry.items || prevEntry.items.length === 0))) {
-      setActivityMap((prev) => ({ ...(prev || {}), [key]: { ...(prev?.[key] || {}), loading: true } }));
+    const willOpen = !prevEntry?.open;
+    setActivityMap((prev) => ({
+      ...(prev || {}),
+      [key]: { ...(prev?.[key] || {}), open: willOpen },
+    }));
+    if (
+      willOpen &&
+      (!prevEntry || !prevEntry.items || prevEntry.items.length === 0)
+    ) {
+      setActivityMap((prev) => ({
+        ...(prev || {}),
+        [key]: { ...(prev?.[key] || {}), loading: true },
+      }));
       try {
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem("token");
         const data = await getTaskActivity(taskId, 1, 20, token);
-        setActivityMap((prev) => ({ ...(prev || {}), [key]: { ...(prev?.[key] || {}), loading: false, items: data.items || [], page: data.page || 1, hasMore: data.hasMore, open: true } }));
+        setActivityMap((prev) => ({
+          ...(prev || {}),
+          [key]: {
+            ...(prev?.[key] || {}),
+            loading: false,
+            items: data.items || [],
+            page: data.page || 1,
+            hasMore: data.hasMore,
+            open: true,
+          },
+        }));
       } catch (err) {
-        console.error('Load activity error', err);
-        setActivityMap((prev) => ({ ...(prev || {}), [key]: { ...(prev?.[key] || {}), loading: false, items: [], page: 1, hasMore: false } }));
+        console.error("Load activity error", err);
+        setActivityMap((prev) => ({
+          ...(prev || {}),
+          [key]: {
+            ...(prev?.[key] || {}),
+            loading: false,
+            items: [],
+            page: 1,
+            hasMore: false,
+          },
+        }));
       }
     }
   }
@@ -306,14 +392,29 @@ export default function TasksModal({ open, onClose, project, filters }) {
     const entry = activityMap[key] || { page: 1, items: [], hasMore: false };
     if (!entry.hasMore) return;
     const nextPage = (entry.page || 1) + 1;
-    setActivityMap((prev) => ({ ...(prev || {}), [key]: { ...(prev?.[key] || {}), loading: true } }));
+    setActivityMap((prev) => ({
+      ...(prev || {}),
+      [key]: { ...(prev?.[key] || {}), loading: true },
+    }));
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       const data = await getTaskActivity(taskId, nextPage, 20, token);
-      setActivityMap((prev) => ({ ...(prev || {}), [key]: { ...(prev?.[key] || {}), loading: false, items: [...(prev?.[key]?.items || []), ...(data.items || [])], page: data.page || nextPage, hasMore: data.hasMore } }));
+      setActivityMap((prev) => ({
+        ...(prev || {}),
+        [key]: {
+          ...(prev?.[key] || {}),
+          loading: false,
+          items: [...(prev?.[key]?.items || []), ...(data.items || [])],
+          page: data.page || nextPage,
+          hasMore: data.hasMore,
+        },
+      }));
     } catch (err) {
-      console.error('Load more activity error', err);
-      setActivityMap((prev) => ({ ...(prev || {}), [key]: { ...(prev?.[key] || {}), loading: false } }));
+      console.error("Load more activity error", err);
+      setActivityMap((prev) => ({
+        ...(prev || {}),
+        [key]: { ...(prev?.[key] || {}), loading: false },
+      }));
     }
   }
 
@@ -321,27 +422,37 @@ export default function TasksModal({ open, onClose, project, filters }) {
     try {
       const meta = a.metadata || {};
       switch (a.type) {
-        case 'attachment_added':
-          return meta.filename ? t('activity.attachment_added', { filename: meta.filename }) : t('activity.attachment_added_generic');
-        case 'attachment_deleted':
-          return meta.filename ? t('activity.attachment_deleted', { filename: meta.filename }) : t('activity.attachment_deleted_generic');
-        case 'task_assigned':
-          return t('activity.task_assigned', { user: meta.user || meta.assigned_to || '' });
-        case 'task_deleted':
-          return t('activity.task_deleted');
-        case 'task_updated':
+        case "attachment_added":
+          return meta.filename
+            ? t("activity.attachment_added", { filename: meta.filename })
+            : t("activity.attachment_added_generic");
+        case "attachment_deleted":
+          return meta.filename
+            ? t("activity.attachment_deleted", { filename: meta.filename })
+            : t("activity.attachment_deleted_generic");
+        case "task_assigned":
+          return t("activity.task_assigned", {
+            user: meta.user || meta.assigned_to || "",
+          });
+        case "task_deleted":
+          return t("activity.task_deleted");
+        case "task_updated":
           if (meta.changes) {
-            const parts = Object.keys(meta.changes).map((k) => `${k}: ${meta.changes[k].old} → ${meta.changes[k].new}`);
-            return t('activity.task_updated_changes', { changes: parts.join('; ') });
+            const parts = Object.keys(meta.changes).map(
+              (k) => `${k}: ${meta.changes[k].old} → ${meta.changes[k].new}`,
+            );
+            return t("activity.task_updated_changes", {
+              changes: parts.join("; "),
+            });
           }
-          return t('activity.task_updated');
-        case 'task_created':
-          return t('activity.task_created');
+          return t("activity.task_updated");
+        case "task_created":
+          return t("activity.task_created");
         default:
-          return t(`activity.${a.type}`) || a.type || '';
+          return t(`activity.${a.type}`) || a.type || "";
       }
     } catch (e) {
-      return t(`activity.${a.type}`) || a.type || '';
+      return t(`activity.${a.type}`) || a.type || "";
     }
   }
 
@@ -352,19 +463,21 @@ export default function TasksModal({ open, onClose, project, filters }) {
       <div className={styles.modal} data-tasks-modal>
         <div className={styles.header}>
           <h3 className={styles.headerTitle}>
-            {t('tasksProjectTitle')} <span className={styles.projectName}>{project.name}</span>
+            <ClipboardList aria-hidden="true" size={19} />
+            {cleanLabel(t("tasksProjectTitle"))}{" "}
+            <span className={styles.projectName}>{project.name}</span>
           </h3>
           <button
             onClick={onClose}
             className={styles.closeButton}
-            title={t('close')}
+            title={t("close")}
           >
-            ✕
+            <X aria-hidden="true" size={18} />
           </button>
         </div>
         <div className={styles.content}>
-          {loading && <div className={styles.loading}>{t('loadingTasks')}</div>}
-          {error && <div className={styles.error}>❌ {error}</div>}
+          {loading && <div className={styles.loading}>{t("loadingTasks")}</div>}
+          {error && <div className={styles.error}>{error}</div>}
           {!loading &&
             !error &&
             (tasks.filter((t) => {
@@ -380,7 +493,7 @@ export default function TasksModal({ open, onClose, project, filters }) {
                   !labels.some((l) =>
                     String(l)
                       .toLowerCase()
-                      .includes(filters.label.toLowerCase())
+                      .includes(filters.label.toLowerCase()),
                   )
                 )
                   return false;
@@ -388,9 +501,13 @@ export default function TasksModal({ open, onClose, project, filters }) {
               return true;
             }).length === 0 ? (
               <div className={styles.emptyState}>
-                <div className={styles.emptyIcon}>📭</div>
-                <div className={styles.emptyText}>{t('noTasksYet')}</div>
-                <div className={styles.emptyHint}>{t('createFirstTaskHint')}</div>
+                <div className={styles.emptyIcon}>
+                  <ClipboardList aria-hidden="true" size={30} />
+                </div>
+                <div className={styles.emptyText}>{t("noTasksYet")}</div>
+                <div className={styles.emptyHint}>
+                  {t("createFirstTaskHint")}
+                </div>
               </div>
             ) : (
               <ul className={styles.tasksList}>
@@ -409,7 +526,7 @@ export default function TasksModal({ open, onClose, project, filters }) {
                         !labels.some((l) =>
                           String(l)
                             .toLowerCase()
-                            .includes(filters.label.toLowerCase())
+                            .includes(filters.label.toLowerCase()),
                         )
                       )
                         return false;
@@ -422,8 +539,18 @@ export default function TasksModal({ open, onClose, project, filters }) {
                         <div className={styles.taskHeader}>
                           <span className={styles.taskTitle}>{task.title}</span>
                           {task.priority && (
-                            <span className={`${styles.priorityBadge} ${styles[`priority-${task.priority}`]}`}>
-                              {task.priority === 'high' ? '🔴' : task.priority === 'medium' ? '🟡' : '🟢'} {task.priority}
+                            <span
+                              className={`${styles.priorityBadge} ${styles[`priority-${task.priority}`]}`}
+                            >
+                              {cleanLabel(
+                                t(
+                                  task.priority === "high"
+                                    ? "priorityHigh"
+                                    : task.priority === "low"
+                                      ? "priorityLow"
+                                      : "priorityMedium",
+                                ),
+                              )}
                             </span>
                           )}
                         </div>
@@ -432,128 +559,232 @@ export default function TasksModal({ open, onClose, project, filters }) {
                             {task.description}
                           </div>
                         )}
-                        {task.labels && Array.isArray(task.labels) && task.labels.length > 0 && (
+                        {
                           <div className={styles.taskLabels}>
-                            {Array.isArray(task.attachments) && task.attachments.length > 0 && (
-                              <div className={styles.taskAttachments}>
-                                {task.attachments.slice(0, 3).map((att) => (
-                                  <span key={att.id} className={styles.attachmentItem} title={att.original_name}>
-                                    <a
-                                      href={att.url}
-                                      onClick={(e) => {
-                                        e.preventDefault();
-                                        const a = document.createElement('a');
-                                        a.href = att.url;
-                                        a.download = att.original_name || '';
-                                        document.body.appendChild(a);
-                                        a.click();
-                                        document.body.removeChild(a);
-                                      }}
+                            {Array.isArray(task.attachments) &&
+                              task.attachments.length > 0 && (
+                                <div className={styles.taskAttachments}>
+                                  {task.attachments.slice(0, 3).map((att) => (
+                                    <span
+                                      key={att.id}
+                                      className={styles.attachmentItem}
+                                      title={att.original_name}
                                     >
-                                      📄 {att.original_name}
-                                    </a>
-                                    <button
-                                      type="button"
-                                      className={styles.attachmentDelete}
-                                      draggable={false}
-                                      onMouseDown={(e) => e.stopPropagation()}
-                                      title={t('deleteAttachment') || 'Видалити файл'}
-                                      aria-label={t('deleteAttachment') || 'Видалити файл'}
-                                      onClick={async (e) => {
-                                        e.stopPropagation();
-                                        try {
-                                          const token = localStorage.getItem('token');
-                                          await deleteTaskAttachment(task.id, att.id, token);
-                                          setTasks((prev) => prev.map((x) => x.id === task.id ? { ...x, attachments: (x.attachments || []).filter(a => a.id !== att.id) } : x));
-                                          setToast({ message: t('attachmentDeleted') || 'Файл успішно видалено', type: 'success' });
-                                        } catch (err) {
-                                          console.error('Delete attachment error', err);
-                                          setToast({ message: t('attachmentDeleteError') || 'Не вдалося видалити файл. Спробуйте ще раз.', type: 'error' });
+                                      <a
+                                        href={att.url}
+                                        onClick={(e) => {
+                                          e.preventDefault();
+                                          const a = document.createElement("a");
+                                          a.href = att.url;
+                                          a.download = att.original_name || "";
+                                          document.body.appendChild(a);
+                                          a.click();
+                                          document.body.removeChild(a);
+                                        }}
+                                      >
+                                        <FileText
+                                          aria-hidden="true"
+                                          size={13}
+                                        />
+                                        {att.original_name}
+                                      </a>
+                                      <button
+                                        type="button"
+                                        className={styles.attachmentDelete}
+                                        draggable={false}
+                                        onMouseDown={(e) => e.stopPropagation()}
+                                        title={
+                                          t("deleteAttachment") ||
+                                          "Видалити файл"
                                         }
-                                      }}
-                                    >
-                                      🗑
-                                    </button>
-                                  </span>
-                                ))}
-                                {task.attachments.length > 3 && (
-                                  <span className={styles.moreAttachments}>+{task.attachments.length - 3}</span>
-                                )}
-                              </div>
-                            )}
-                            {task.labels.map((label, idx) => (
+                                        aria-label={
+                                          t("deleteAttachment") ||
+                                          "Видалити файл"
+                                        }
+                                        onClick={async (e) => {
+                                          e.stopPropagation();
+                                          try {
+                                            const token =
+                                              localStorage.getItem("token");
+                                            await deleteTaskAttachment(
+                                              task.id,
+                                              att.id,
+                                              token,
+                                            );
+                                            setTasks((prev) =>
+                                              prev.map((x) =>
+                                                x.id === task.id
+                                                  ? {
+                                                      ...x,
+                                                      attachments: (
+                                                        x.attachments || []
+                                                      ).filter(
+                                                        (a) => a.id !== att.id,
+                                                      ),
+                                                    }
+                                                  : x,
+                                              ),
+                                            );
+                                            setToast({
+                                              message:
+                                                t("attachmentDeleted") ||
+                                                "Файл успішно видалено",
+                                              type: "success",
+                                            });
+                                          } catch (err) {
+                                            console.error(
+                                              "Delete attachment error",
+                                              err,
+                                            );
+                                            setToast({
+                                              message:
+                                                t("attachmentDeleteError") ||
+                                                "Не вдалося видалити файл. Спробуйте ще раз.",
+                                              type: "error",
+                                            });
+                                          }
+                                        }}
+                                      >
+                                        <Trash2 aria-hidden="true" size={13} />
+                                      </button>
+                                    </span>
+                                  ))}
+                                  {task.attachments.length > 3 && (
+                                    <span className={styles.moreAttachments}>
+                                      +{task.attachments.length - 3}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                            {(Array.isArray(task.labels)
+                              ? task.labels
+                              : []
+                            ).map((label, idx) => (
                               <span key={idx} className={styles.labelChip}>
-                                🏷️ {label}
+                                <Tag aria-hidden="true" size={12} />
+                                {label}
                               </span>
                             ))}
-                            <div style={{display:'flex', gap:8, alignItems:'center'}}>
+                            <div
+                              style={{
+                                display: "flex",
+                                gap: 8,
+                                alignItems: "center",
+                              }}
+                            >
                               <button
                                 type="button"
                                 className={styles.attachmentButton}
                                 onClick={() => handleUploadAttachment(task)}
                                 disabled={uploadingFor === task.id}
-                                title={t('addAttachment') || 'Add attachment'}
+                                title={t("addAttachment") || "Add attachment"}
                               >
-                                📎 {uploadingFor === task.id ? t('uploading') || 'Uploading...' : ''}
+                                <Paperclip aria-hidden="true" size={14} />
+                                {uploadingFor === task.id
+                                  ? t("uploading") || "Uploading..."
+                                  : cleanLabel(t("addAttachment"))}
                               </button>
                               <button
                                 type="button"
                                 className={styles.activityButton}
                                 onClick={() => toggleActivity(task.id)}
-                                title={t('showActivity') || 'Показати активність'}
+                                title={
+                                  t("showActivity") || "Показати активність"
+                                }
                               >
-                                🕘 {t('activity') || 'Activity'}
+                                <Clock3 aria-hidden="true" size={14} />
+                                {cleanLabel(t("activity") || "Activity")}
                               </button>
                             </div>
                           </div>
-                        )}
+                        }
                         {/* Activity panel for this task */}
-                        {activityMap[String(task.id)] && activityMap[String(task.id)].open && (
-                          <div className={styles.activityList}>
-                            {activityMap[String(task.id)].loading ? (
-                              <div className={styles.activityLoading}>{t('loading') || 'Loading...'}</div>
-                            ) : (
-                              <>
-                                {(activityMap[String(task.id)].items || []).map((a) => (
-                                  <div key={a.id} className={styles.activityItem}>
-                                    <div className={styles.activityHeader}>
-                                      <strong>{a.username || `user:${a.user_id}`}</strong>
-                                      <span className={styles.activityTime}>{new Date(a.created_at).toLocaleString()}</span>
+                        {activityMap[String(task.id)] &&
+                          activityMap[String(task.id)].open && (
+                            <div className={styles.activityList}>
+                              {activityMap[String(task.id)].loading ? (
+                                <div className={styles.activityLoading}>
+                                  {t("loading") || "Loading..."}
+                                </div>
+                              ) : (
+                                <>
+                                  {(
+                                    activityMap[String(task.id)].items || []
+                                  ).map((a) => (
+                                    <div
+                                      key={a.id}
+                                      className={styles.activityItem}
+                                    >
+                                      <div className={styles.activityHeader}>
+                                        <strong>
+                                          {a.username || `user:${a.user_id}`}
+                                        </strong>
+                                        <span className={styles.activityTime}>
+                                          {new Date(
+                                            a.created_at,
+                                          ).toLocaleString()}
+                                        </span>
+                                      </div>
+                                      <div className={styles.activityBody}>
+                                        <div className={styles.activityMessage}>
+                                          {formatActivityMessage(a)}
+                                        </div>
+                                      </div>
                                     </div>
-                                    <div className={styles.activityBody}>
-                                      <div className={styles.activityMessage}>{formatActivityMessage(a)}</div>
+                                  ))}
+                                  {activityMap[String(task.id)].hasMore && (
+                                    <div
+                                      className={styles.activityLoadMoreWrap}
+                                    >
+                                      <button
+                                        className={styles.loadMoreButton}
+                                        onClick={() =>
+                                          loadMoreActivity(task.id)
+                                        }
+                                        disabled={
+                                          activityMap[String(task.id)].loading
+                                        }
+                                      >
+                                        {activityMap[String(task.id)].loading
+                                          ? t("loading")
+                                          : t("loadMore") || "Load more"}
+                                      </button>
                                     </div>
-                                  </div>
-                                ))}
-                                {activityMap[String(task.id)].hasMore && (
-                                  <div className={styles.activityLoadMoreWrap}>
-                                    <button className={styles.loadMoreButton} onClick={() => loadMoreActivity(task.id)} disabled={activityMap[String(task.id)].loading}>
-                                      {activityMap[String(task.id)].loading ? t('loading') : t('loadMore') || 'Load more'}
-                                    </button>
-                                  </div>
-                                )}
-                              </>
-                            )}
-                          </div>
-                        )}
+                                  )}
+                                </>
+                              )}
+                            </div>
+                          )}
                       </div>
                       <div className={styles.taskActions}>
-                        <span className={`${styles.statusBadge} ${styles[`status-${task.status}`]}`}>
-                          {task.status === 'done' ? '✅' : task.status === 'in_progress' ? '🔄' : '⏳'} {task.status}
+                        <span
+                          className={`${styles.statusBadge} ${styles[`status-${task.status}`]}`}
+                        >
+                          {cleanLabel(
+                            t(
+                              task.status === "done"
+                                ? "statusDone"
+                                : task.status === "in_progress"
+                                  ? "statusInProgress"
+                                  : "statusPending",
+                            ),
+                          )}
                         </span>
                         <button
                           onClick={() => startEdit(task)}
                           className={styles.editButton}
-                          title={t('editTaskBtnTitle')}
+                          title={t("editTaskBtnTitle")}
                         >
-                          ✏️ {t('edit')}
+                          <Pencil aria-hidden="true" size={13} />
+                          {cleanLabel(t("edit"))}
                         </button>
                         <button
                           onClick={() => handleDelete(task.id)}
                           className={styles.deleteButton}
-                          title={t('deleteTaskBtnTitle')}
+                          title={t("deleteTaskBtnTitle")}
                         >
-                          {t('delete')}
+                          <Trash2 aria-hidden="true" size={13} />
+                          {cleanLabel(t("delete"))}
                         </button>
                       </div>
                     </li>
@@ -563,7 +794,14 @@ export default function TasksModal({ open, onClose, project, filters }) {
           <hr className={styles.divider} />
           <div className={styles.formSection}>
             <h4 className={styles.formTitle}>
-              {editTask ? t('editTaskTitle') : t('createTaskTitle')}
+              {editTask ? (
+                cleanLabel(t("editTaskTitle"))
+              ) : (
+                <>
+                  <Plus aria-hidden="true" size={18} />
+                  {cleanLabel(t("createTaskTitle"))}
+                </>
+              )}
             </h4>
             <form
               onSubmit={editTask ? handleUpdate : handleCreate}
@@ -571,14 +809,13 @@ export default function TasksModal({ open, onClose, project, filters }) {
             >
               <div className={styles.inputGroup}>
                 <label className={styles.inputLabel}>
-                  <span className={styles.labelIcon}>📌</span>
-                  {t('taskName')}
+                  {t("taskName")}
                   <span className={styles.required}>*</span>
                 </label>
                 <input
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder={t('taskNamePlaceholder')}
+                  placeholder={t("taskNamePlaceholder")}
                   className={styles.input}
                   required
                   maxLength={150}
@@ -586,13 +823,12 @@ export default function TasksModal({ open, onClose, project, filters }) {
               </div>
               <div className={styles.inputGroup}>
                 <label className={styles.inputLabel}>
-                  <span className={styles.labelIcon}>📝</span>
-                  {t('taskDescriptionLabel')}
+                  {t("taskDescriptionLabel")}
                 </label>
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder={t('taskDescPlaceholderModal')}
+                  placeholder={t("taskDescPlaceholderModal")}
                   className={styles.textarea}
                   rows={3}
                   maxLength={300}
@@ -601,44 +837,47 @@ export default function TasksModal({ open, onClose, project, filters }) {
               <div className={styles.selectGrid}>
                 <div className={styles.inputGroup}>
                   <label className={styles.inputLabel}>
-                    <span className={styles.labelIcon}>📊</span>
-                    {t('statusLabel')}
+                    {t("statusLabel")}
                   </label>
                   <select
                     value={status}
                     onChange={(e) => setStatus(e.target.value)}
                     className={styles.select}
                   >
-                    <option value="pending">⏳ Pending</option>
-                    <option value="in_progress">🔄 In Progress</option>
-                    <option value="done">✅ Done</option>
+                    <option value="pending">
+                      {cleanLabel(t("statusPending"))}
+                    </option>
+                    <option value="in_progress">
+                      {cleanLabel(t("statusInProgress"))}
+                    </option>
+                    <option value="done">{cleanLabel(t("statusDone"))}</option>
                   </select>
                 </div>
                 <div className={styles.inputGroup}>
                   <label className={styles.inputLabel}>
-                    <span className={styles.labelIcon}>🎯</span>
-                    {t('priorityLabel')}
+                    {t("priorityLabel")}
                   </label>
                   <select
                     value={priority}
                     onChange={(e) => setPriority(e.target.value)}
                     className={styles.select}
                   >
-                    <option value="low">🟢 Low</option>
-                    <option value="medium">🟡 Medium</option>
-                    <option value="high">🔴 High</option>
+                    <option value="low">{cleanLabel(t("priorityLow"))}</option>
+                    <option value="medium">
+                      {cleanLabel(t("priorityMedium"))}
+                    </option>
+                    <option value="high">
+                      {cleanLabel(t("priorityHigh"))}
+                    </option>
                   </select>
                 </div>
               </div>
               <div className={styles.inputGroup}>
-                <label className={styles.inputLabel}>
-                  <span className={styles.labelIcon}>🏷️</span>
-                  {t('labelsLabel')}
-                </label>
+                <label className={styles.inputLabel}>{t("labelsLabel")}</label>
                 <input
                   value={labelsInput}
                   onChange={(e) => setLabelsInput(e.target.value)}
-                  placeholder={t('labelsPlaceholder')}
+                  placeholder={t("labelsPlaceholder")}
                   className={styles.input}
                 />
               </div>
@@ -649,14 +888,11 @@ export default function TasksModal({ open, onClose, project, filters }) {
                     onClick={cancelEdit}
                     className={styles.cancelEditButton}
                   >
-                    {t('cancel')}
+                    {t("cancel")}
                   </button>
                 )}
-                <button
-                  type="submit"
-                  className={styles.submitButton}
-                >
-                  {editTask ? t('saveChanges') : t('createTaskBtn')}
+                <button type="submit" className={styles.submitButton}>
+                  {cleanLabel(editTask ? t("saveChanges") : t("createTaskBtn"))}
                 </button>
               </div>
             </form>

@@ -4,13 +4,17 @@ import { getMyInvitations, acceptInvitation, declineInvitation } from "../api";
 import { useI18n } from "../context/I18nContext.jsx";
 import ProjectInviteCard from "./ProjectInviteCard.jsx";
 import useMobileMenuPosition from "./useMobileMenuPosition.js";
+import { Check, Mail, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export default function InvitationsBell({ isOpen, onToggle }) {
   const { token, user, socket } = useAuth();
   const [invites, setInvites] = useState([]);
   const { t } = useI18n();
   const rootRef = useRef(null);
-  const { triggerRef, menuStyle } = useMobileMenuPosition(isOpen, { maxWidth: 320 });
+  const { triggerRef, menuStyle } = useMobileMenuPosition(isOpen, {
+    maxWidth: 320,
+  });
 
   async function load() {
     if (!token) return;
@@ -33,8 +37,8 @@ export default function InvitationsBell({ isOpen, onToggle }) {
         onToggle();
       }
     }
-    document.addEventListener('click', onDocClick);
-    return () => document.removeEventListener('click', onDocClick);
+    document.addEventListener("click", onDocClick);
+    return () => document.removeEventListener("click", onDocClick);
   }, [isOpen, onToggle]);
 
   useEffect(() => {
@@ -64,66 +68,66 @@ export default function InvitationsBell({ isOpen, onToggle }) {
 
   return (
     <div style={{ position: "relative" }} ref={rootRef}>
-      <button 
+      <Button
         ref={triggerRef}
-        title={t('invitationsTitle')} 
+        title={t("invitationsTitle")}
+        aria-label={`${t("invitationsTitle")} (${count})`}
+        aria-expanded={isOpen}
         onClick={onToggle}
-        style={{
-          position: "relative",
-          padding: "10px 16px",
-          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-          color: "#fff",
-          border: "none",
-          borderRadius: "10px",
-          cursor: "pointer",
-          fontWeight: 600,
-          fontSize: "16px",
-          boxShadow: "0 2px 8px rgba(102,126,234,0.3)",
-          transition: "all 0.3s",
-          display: "flex",
-          alignItems: "center",
-          gap: "6px"
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.transform = "translateY(-2px)";
-          e.currentTarget.style.boxShadow = "0 4px 12px rgba(102,126,234,0.4)";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.transform = "translateY(0)";
-          e.currentTarget.style.boxShadow = "0 2px 8px rgba(102,126,234,0.3)";
-        }}
+        variant="ghost"
+        size="icon-lg"
+        className="workspaceIconButton"
       >
-        📨
+        <Mail aria-hidden="true" />
         {count > 0 && (
-          <span style={{ 
-            background: "#ef4444", 
-            color: "#fff", 
-            borderRadius: "50%", 
-            padding: "2px 6px",
-            fontSize: "12px",
-            fontWeight: 700,
-            minWidth: "20px",
-            textAlign: "center"
-          }}>
+          <span className="workspaceIconCount" aria-hidden="true">
             {count}
           </span>
         )}
-      </button>
+      </Button>
       {isOpen && (
-        <div style={{ position: "absolute", right: 0, top: "120%", background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8, padding: 8, width: "min(260px, calc(100vw - 2rem))", maxWidth: "calc(100vw - 2rem)", boxSizing: "border-box", boxShadow: "0 8px 24px rgba(0,0,0,.12)", zIndex: 1000, ...menuStyle }}>
-          <div style={{ fontWeight: 700, marginBottom: 8 }}>{t('invitationsTitle')}</div>
+        <div className="workspaceDropdown" style={menuStyle || undefined}>
+          <div className="workspaceDropdownTitle">{t("invitationsTitle")}</div>
           {invites.length === 0 ? (
-            <div style={{ color: "#64748b" }}>{t('noInvitations')}</div>
+            <div className="workspaceDropdownEmpty">{t("noInvitations")}</div>
           ) : (
             invites.map((inv) => (
-              <div key={inv.id} style={{ display: "flex", flexDirection: 'column', gap: 8, padding: "6px 0" }}>
+              <div
+                key={inv.id}
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 8,
+                  padding: "6px 0",
+                }}
+              >
                 <ProjectInviteCard
-                  data={{ sender_id: inv.sender_id, project_id: inv.project_id, project_name: inv.project_name, invitation_id: inv.id }}
+                  data={{
+                    sender_id: inv.sender_id,
+                    project_id: inv.project_id,
+                    project_name: inv.project_name,
+                    invitation_id: inv.id,
+                  }}
                   createdAt={inv.created_at}
                 />
-                <div style={{ display: "flex", gap: 6, alignSelf: 'flex-end' }}>
-                  <button onClick={() => onAccept(inv.id)} title={t('accept')}>✅</button>
-                  <button onClick={() => onDecline(inv.id)} title={t('decline')}>❌</button>
+                <div className="workspaceDropdownActions">
+                  <button
+                    onClick={() => onAccept(inv.id)}
+                    title={t("accept")}
+                    aria-label={t("accept")}
+                  >
+                    <Check aria-hidden="true" size={14} />
+                    {t("accept")}
+                  </button>
+                  <button
+                    onClick={() => onDecline(inv.id)}
+                    title={t("decline")}
+                    aria-label={t("decline")}
+                    className="danger"
+                  >
+                    <X aria-hidden="true" size={14} />
+                    {t("decline")}
+                  </button>
                 </div>
               </div>
             ))

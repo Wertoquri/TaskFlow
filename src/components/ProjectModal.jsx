@@ -1,150 +1,132 @@
-import React, { useState, useEffect } from "react";
-import styles from "./ProjectModal.module.css";
+import { useEffect, useState } from "react";
+import { X } from "lucide-react";
 import { useI18n } from "../context/I18nContext.jsx";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import styles from "./ProjectModal.module.css";
 
-export default function ProjectModal({
-  open,
-  onClose,
-  onSubmit,
-  initialData, // { id, name, description }
-}) {
+const cleanLabel = (value) =>
+  String(value || "").replace(/^[^\p{L}\p{N}]+/u, "");
+
+export default function ProjectModal({ open, onClose, onSubmit, initialData }) {
   const { t } = useI18n();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [nameError, setNameError] = useState("");
 
   useEffect(() => {
-    if (initialData) {
-      setName(initialData.name || "");
-      setDescription(initialData.description || "");
-    } else {
-      setName("");
-      setDescription("");
-    }
+    setName(initialData?.name || "");
+    setDescription(initialData?.description || "");
     setNameError("");
   }, [initialData, open]);
 
-  useEffect(() => {
-    function handleEscape(e) {
-      if (e.key === "Escape" && open) {
-        onClose();
-      }
-    }
-    document.addEventListener("keydown", handleEscape);
-    return () => document.removeEventListener("keydown", handleEscape);
-  }, [open, onClose]);
-
-  useEffect(() => {
-    // GSAP анімація для модального вікна
-    if (open && window.gsap) {
-      const modal = document.querySelector('[data-modal-content]');
-      if (modal) {
-        window.gsap.fromTo(modal, 
-          {
-            scale: 0.9,
-            opacity: 0,
-            y: -30
-          },
-          {
-            scale: 1,
-            opacity: 1,
-            y: 0,
-            duration: 0.3,
-            ease: "power2.out"
-          }
-        );
-      }
-    }
-  }, [open]);
-
-  function handleSubmit(e) {
-    e.preventDefault();
+  function handleSubmit(event) {
+    event.preventDefault();
     if (!name.trim()) {
-      setNameError(t('projectNameRequired'));
+      setNameError(t("projectNameRequired"));
       return;
     }
     if (name.trim().length < 3) {
-      setNameError(t('projectNameShort'));
+      setNameError(t("projectNameShort"));
       return;
     }
     setNameError("");
-    onSubmit({ id: initialData?.id, name: name.trim(), description: description.trim() });
+    onSubmit({
+      id: initialData?.id,
+      name: name.trim(),
+      description: description.trim(),
+    });
   }
-
-  function handleClose(e) {
-    if (e.target === e.currentTarget) {
-      onClose();
-    }
-  }
-
-  if (!open) return null;
 
   return (
-    <div className={styles.overlay} onClick={handleClose}>
-      <form onSubmit={handleSubmit} className={styles.modal} data-modal-content>
-        <div className={styles.header}>
-          <h3 className={styles.title}>
-            {initialData ? t('editProjectTitle') : t('createProjectTitle')}
-          </h3>
-          <button
-            type="button"
-            onClick={onClose}
-            className={styles.closeIcon}
-            title={t('close')}
-          >
-            ✕
-          </button>
-        </div>
-        <div className={styles.content}>
-          <div className={styles.inputGroup}>
-            <label className={styles.label}>
-              <span className={styles.labelIcon}>📌</span>
-              {t('projectNameLabel')}
-              <span className={styles.required}>*</span>
-            </label>
-            <input
-              value={name}
-              onChange={(e) => {
-                setName(e.target.value);
-                setNameError("");
-              }}
-              className={`${styles.input} ${nameError ? styles.inputError : ""}`}
-              placeholder={t('projectNamePlaceholder')}
-              autoFocus
-              maxLength={100}
-            />
-            {nameError && <span className={styles.errorText}>{nameError}</span>}
-            <span className={styles.charCount}>{name.length}/100</span>
-          </div>
-          <div className={styles.inputGroup}>
-            <label className={styles.label}>
-              <span className={styles.labelIcon}>📝</span>
-              {t('projectDescLabel')}
-            </label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className={styles.textarea}
-              placeholder={t('projectDescPlaceholder')}
-              maxLength={500}
-              rows={4}
-            />
-            <span className={styles.charCount}>{description.length}/500</span>
-          </div>
-        </div>
-        <div className={styles.footer}>
-          <button
-            type="button"
-            onClick={onClose}
-            className={styles.cancelButton}
-          >
-            {t('cancelBtn')}
-          </button>
-          <button type="submit" className={styles.submitButton}>
-            {initialData ? t('saveChangesProject') : t('createProjectBtn')}
-          </button>
-        </div>
-      </form>
-    </div>
+    <Dialog
+      open={open}
+      onOpenChange={(value) => {
+        if (!value) onClose();
+      }}
+    >
+      <DialogContent showCloseButton={false} className={styles.dialog}>
+        <DialogHeader className={styles.header}>
+          <DialogTitle className={styles.title}>
+            {cleanLabel(
+              initialData ? t("editProjectTitle") : t("createProjectTitle"),
+            )}
+          </DialogTitle>
+          <DialogClose asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label={t("close")}
+            >
+              <X aria-hidden="true" />
+            </Button>
+          </DialogClose>
+        </DialogHeader>
+        <form onSubmit={handleSubmit}>
+          <FieldGroup className={styles.fields}>
+            <Field data-invalid={Boolean(nameError)}>
+              <FieldLabel htmlFor="project-name">
+                {t("projectNameLabel")} *
+              </FieldLabel>
+              <Input
+                id="project-name"
+                value={name}
+                onChange={(event) => {
+                  setName(event.target.value);
+                  setNameError("");
+                }}
+                placeholder={t("projectNamePlaceholder")}
+                autoFocus
+                maxLength={100}
+                aria-invalid={Boolean(nameError)}
+                required
+              />
+              {nameError && <FieldError>{nameError}</FieldError>}
+              <span className={styles.count}>{name.length}/100</span>
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="project-description">
+                {t("projectDescLabel")}
+              </FieldLabel>
+              <Textarea
+                id="project-description"
+                value={description}
+                onChange={(event) => setDescription(event.target.value)}
+                placeholder={t("projectDescPlaceholder")}
+                maxLength={500}
+                rows={4}
+              />
+              <span className={styles.count}>{description.length}/500</span>
+            </Field>
+          </FieldGroup>
+          <DialogFooter className={styles.footer}>
+            <Button type="button" variant="outline" onClick={onClose}>
+              {t("cancelBtn")}
+            </Button>
+            <Button type="submit">
+              {cleanLabel(
+                initialData ? t("saveChangesProject") : t("createProjectBtn"),
+              )}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

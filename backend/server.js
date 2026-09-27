@@ -60,6 +60,7 @@ app.use('/api/notifications', notificationsRoutes);
 // Me endpoint (requires auth)
 const authenticate = require('./middleware/authenticate');
 const { getQuery, run, pool } = require('./db');
+const { getProjectAccess } = require('./middleware/projectAccess');
 app.get('/api/me', authenticate, async (req, res) => {
     try {
         const rows = await getQuery(
@@ -124,10 +125,17 @@ app.set('io', io);
 io.use((socket, next) => {
     const token = socket.handshake.auth?.token;
     if (!token) return next(new Error('Unauthorized'));
-    jwt.verify(token, process.env.JWT_SECRET, (error, decoded) => {
+    jwt.verify(token, process.env.JWT_SECRET, async (error, decoded) => {
         if (error || !decoded?.id) return next(new Error('Unauthorized'));
-        socket.user = decoded;
-        next();
+        try {
+            const rows = await getQuery('SELECT token_version FROM users WHERE id = ?', [decoded.id]);
+            if (!rows.length || rows[0].token_version !== (decoded.v ?? 0)) return next(new Error('Unauthorized'));
+            socket.user = decoded;
+            next();
+        } catch (lookupError) {
+            console.error('Socket authentication lookup failed:', lookupError);
+            next(new Error('Unauthorized'));
+        }
     });
 });
 
@@ -138,11 +146,8 @@ io.on('connection', (socket) => {
         const parsedProjectId = Number(projectId);
         if (!Number.isInteger(parsedProjectId) || parsedProjectId <= 0) return;
         try {
-            const membership = await getQuery(
-                'SELECT 1 FROM project_members WHERE project_id = ? AND user_id = ?',
-                [parsedProjectId, socket.user.id]
-            );
-            if (membership.length) socket.join(`project:${parsedProjectId}`);
+            const access = await getProjectAccess(parsedProjectId, socket.user.id);
+            if (access.allowed) socket.join(`project:${parsedProjectId}`);
         } catch (error) {
             console.error('Socket project authorization failed:', error?.message || error);
         }

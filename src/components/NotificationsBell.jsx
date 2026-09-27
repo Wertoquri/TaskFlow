@@ -1,17 +1,26 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useAuth } from "../context/AuthContext";
-import { getNotifications, markNotificationAsRead, markAllNotificationsAsRead, deleteNotification } from "../api";
+import {
+  getNotifications,
+  markNotificationAsRead,
+  markAllNotificationsAsRead,
+  deleteNotification,
+} from "../api";
 import { useI18n } from "../context/I18nContext.jsx";
 import NotificationCard from "./NotificationCard.jsx";
 import ProjectInviteCard from "./ProjectInviteCard.jsx";
 import useMobileMenuPosition from "./useMobileMenuPosition.js";
+import { Bell, Check, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export default function NotificationsBell({ isOpen, onToggle }) {
   const { token, socket } = useAuth();
   const [notifications, setNotifications] = useState([]);
   const { t } = useI18n();
   const rootRef = useRef(null);
-  const { triggerRef, menuStyle } = useMobileMenuPosition(isOpen, { maxWidth: 360 });
+  const { triggerRef, menuStyle } = useMobileMenuPosition(isOpen, {
+    maxWidth: 360,
+  });
 
   async function load() {
     if (!token) return;
@@ -36,8 +45,8 @@ export default function NotificationsBell({ isOpen, onToggle }) {
         onToggle();
       }
     }
-    document.addEventListener('click', onDocClick);
-    return () => document.removeEventListener('click', onDocClick);
+    document.addEventListener("click", onDocClick);
+    return () => document.removeEventListener("click", onDocClick);
   }, [isOpen, onToggle]);
 
   useEffect(() => {
@@ -54,7 +63,7 @@ export default function NotificationsBell({ isOpen, onToggle }) {
     try {
       await markNotificationAsRead(id, token);
       setNotifications((prev) =>
-        prev.map((n) => (n.id === id ? { ...n, is_read: 1 } : n))
+        prev.map((n) => (n.id === id ? { ...n, is_read: 1 } : n)),
       );
     } catch (err) {
       console.error("Failed to mark as read:", err);
@@ -83,71 +92,25 @@ export default function NotificationsBell({ isOpen, onToggle }) {
 
   return (
     <div style={{ position: "relative" }} ref={rootRef}>
-      <button
+      <Button
         ref={triggerRef}
-        title={t('notificationsTitle')}
+        title={t("notificationsTitle")}
+        aria-label={`${t("notificationsTitle")} (${unreadCount})`}
+        aria-expanded={isOpen}
         onClick={onToggle}
-        style={{
-          position: "relative",
-          padding: "10px 16px",
-          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-          color: "#fff",
-          border: "none",
-          borderRadius: "10px",
-          cursor: "pointer",
-          fontWeight: 600,
-          fontSize: "16px",
-          boxShadow: "0 2px 8px rgba(102,126,234,0.3)",
-          transition: "all 0.3s",
-          display: "flex",
-          alignItems: "center",
-          gap: "6px"
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.transform = "translateY(-2px)";
-          e.currentTarget.style.boxShadow = "0 4px 12px rgba(102,126,234,0.4)";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.transform = "translateY(0)";
-          e.currentTarget.style.boxShadow = "0 2px 8px rgba(102,126,234,0.3)";
-        }}
+        variant="ghost"
+        size="icon-lg"
+        className="workspaceIconButton"
       >
-        🔔 
+        <Bell aria-hidden="true" />
         {unreadCount > 0 && (
-          <span style={{ 
-            background: "#ef4444", 
-            color: "#fff", 
-            borderRadius: "50%", 
-            padding: "2px 6px",
-            fontSize: "12px",
-            fontWeight: 700,
-            minWidth: "20px",
-            textAlign: "center"
-          }}>
+          <span className="workspaceIconCount" aria-hidden="true">
             {unreadCount}
           </span>
         )}
-      </button>
+      </Button>
       {isOpen && (
-        <div
-          style={{
-            position: "absolute",
-            right: 0,
-            top: "120%",
-            background: "#fff",
-            border: "1px solid #e2e8f0",
-            borderRadius: "8px",
-            padding: "12px",
-            width: "min(320px, calc(100vw - 2rem))",
-            maxWidth: "calc(100vw - 2rem)",
-            maxHeight: "500px",
-            overflowY: "auto",
-            boxSizing: "border-box",
-            boxShadow: "0 8px 24px rgba(0,0,0,.12)",
-            zIndex: 1000,
-            ...menuStyle,
-          }}
-        >
+        <div className="workspaceDropdown" style={menuStyle || undefined}>
           <div
             style={{
               display: "flex",
@@ -156,32 +119,25 @@ export default function NotificationsBell({ isOpen, onToggle }) {
               marginBottom: "12px",
             }}
           >
-            <div style={{ fontWeight: 700, fontSize: "16px" }}>{t('notificationsTitle')}</div>
+            <div className="workspaceDropdownTitle">
+              {t("notificationsTitle")}
+            </div>
             {unreadCount > 0 && (
               <button
                 onClick={onMarkAllAsRead}
-                style={{
-                  fontSize: "12px",
-                  padding: "4px 8px",
-                  background: "#e2e8f0",
-                  border: "none",
-                  borderRadius: "6px",
-                  cursor: "pointer",
-                }}
+                className="workspaceDropdownSecondary"
               >
-                {t('markAllRead')}
+                {t("markAllRead")}
               </button>
             )}
           </div>
           {notifications.length === 0 ? (
-            <div style={{ color: "#64748b", textAlign: "center", padding: "16px" }}>
-              {t('noNotifications')}
-            </div>
+            <div className="workspaceDropdownEmpty">{t("noNotifications")}</div>
           ) : (
             notifications.map((notif) => {
               // Parse payload if it's a JSON string
               let parsedPayload = notif.payload;
-              if (typeof parsedPayload === 'string') {
+              if (typeof parsedPayload === "string") {
                 try {
                   parsedPayload = JSON.parse(parsedPayload);
                 } catch {
@@ -189,35 +145,46 @@ export default function NotificationsBell({ isOpen, onToggle }) {
                 }
               }
 
-              const isProjectInvite = notif.type === 'project_invite' && parsedPayload && typeof parsedPayload === 'object';
+              const isProjectInvite =
+                notif.type === "project_invite" &&
+                parsedPayload &&
+                typeof parsedPayload === "object";
 
               return (
                 <div key={notif.id} style={{ marginBottom: 8 }}>
                   {isProjectInvite ? (
-                    <ProjectInviteCard data={parsedPayload} createdAt={notif.created_at} />
+                    <ProjectInviteCard
+                      data={parsedPayload}
+                      createdAt={notif.created_at}
+                    />
                   ) : (
                     <NotificationCard
                       title={notif.type}
-                      body={typeof parsedPayload === 'string' ? parsedPayload : JSON.stringify(parsedPayload)}
+                      body={
+                        typeof parsedPayload === "string"
+                          ? parsedPayload
+                          : JSON.stringify(parsedPayload)
+                      }
                       createdAt={notif.created_at}
                     />
                   )}
-                  <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', marginTop: 6 }}>
+                  <div className="workspaceDropdownActions">
                     {!notif.is_read && (
                       <button
                         onClick={() => onMarkAsRead(notif.id)}
-                        title={t('markAsRead') || 'Позначити прочитаним'}
-                        style={{ fontSize: 14, padding: '4px 8px', background: '#e2e8f0', border: 'none', borderRadius: 6, cursor: 'pointer' }}
+                        title={t("markAsRead") || "Позначити прочитаним"}
+                        aria-label={t("markAsRead") || "Позначити прочитаним"}
                       >
-                        ✓
+                        <Check aria-hidden="true" size={14} />
                       </button>
                     )}
                     <button
                       onClick={() => onDelete(notif.id)}
-                      title={t('delete')}
-                      style={{ fontSize: 14, padding: '4px 8px', background: '#fee2e2', border: 'none', borderRadius: 6, cursor: 'pointer' }}
+                      title={t("delete")}
+                      aria-label={t("delete")}
+                      className="danger"
                     >
-                      🗑️
+                      <Trash2 aria-hidden="true" size={14} />
                     </button>
                   </div>
                 </div>

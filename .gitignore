@@ -6,6 +6,7 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+.playwright-cli/
 
 node_modules
 dist
@@ -23,6 +24,7 @@ dist-ssr
 *.sln
 *.sw?
 .env
+.taskflow-local-db.json
 структура
 sds.sql
 backend/uploads/

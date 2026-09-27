@@ -1,15 +1,16 @@
-const nodemailer = require('nodemailer');
-const dns = require('node:dns').promises;
-const net = require('node:net');
+const nodemailer = require("nodemailer");
+const dns = require("node:dns").promises;
+const net = require("node:net");
 
 function getSmtpConfig() {
   const port = Number(process.env.EMAIL_PORT || 587);
-  const explicitSecure = typeof process.env.EMAIL_SECURE === 'string'
-    ? process.env.EMAIL_SECURE.toLowerCase() === 'true'
-    : undefined;
+  const explicitSecure =
+    typeof process.env.EMAIL_SECURE === "string"
+      ? process.env.EMAIL_SECURE.toLowerCase() === "true"
+      : undefined;
 
   return {
-    host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+    host: process.env.EMAIL_HOST || "smtp.gmail.com",
     port,
     secure: explicitSecure ?? port === 465,
     user: process.env.EMAIL_USER,
@@ -51,7 +52,7 @@ function generateVerificationCode() {
 }
 
 async function sendVerificationEmail(email, code) {
-  if ((process.env.EMAIL_MODE || '').toLowerCase() === 'console') {
+  if ((process.env.EMAIL_MODE || "").toLowerCase() === "console") {
     console.log(`[demo-email] verification code for ${email}: ${code}`);
     return true;
   }
@@ -62,8 +63,8 @@ async function sendVerificationEmail(email, code) {
 
     try {
       const response = await fetch(process.env.EMAIL_API_URL, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        method: "POST",
+        headers: { "content-type": "application/json" },
         body: JSON.stringify({
           secret: process.env.EMAIL_API_SECRET,
           to: email,
@@ -79,7 +80,7 @@ async function sendVerificationEmail(email, code) {
 
       return true;
     } catch (error) {
-      console.error('Verification email API failed:', error?.message || error);
+      console.error("Verification email API failed:", error?.message || error);
       return false;
     } finally {
       clearTimeout(timeout);
@@ -88,14 +89,16 @@ async function sendVerificationEmail(email, code) {
 
   const config = getSmtpConfig();
   if (!config.user || !config.pass || !config.from) {
-    console.error('SMTP is not configured: EMAIL_USER, EMAIL_PASS and EMAIL_FROM are required.');
+    console.error(
+      "SMTP is not configured: EMAIL_USER, EMAIL_PASS and EMAIL_FROM are required.",
+    );
     return false;
   }
 
   const mailOptions = {
     from: config.from,
     to: email,
-    subject: 'Підтвердження реєстрації в TaskFlow',
+    subject: "Підтвердження реєстрації в TaskFlow",
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 16px;">
         <div style="background: #fff; padding: 40px; border-radius: 12px; text-align: center;">
@@ -125,7 +128,65 @@ async function sendVerificationEmail(email, code) {
     await transporter.sendMail(mailOptions);
     return true;
   } catch (error) {
-    console.error('Failed to send verification email:', error?.message || error);
+    console.error(
+      "Failed to send verification email:",
+      error?.message || error,
+    );
+    return false;
+  }
+}
+
+async function sendPasswordResetEmail(email, code) {
+  if ((process.env.EMAIL_MODE || "").toLowerCase() === "console") {
+    console.log(`[demo-email] password reset code for ${email}: ${code}`);
+    return true;
+  }
+
+  if (process.env.EMAIL_API_URL && process.env.EMAIL_API_SECRET) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15_000);
+    try {
+      const response = await fetch(process.env.EMAIL_API_URL, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          secret: process.env.EMAIL_API_SECRET,
+          to: email,
+          code,
+          purpose: "password-reset",
+        }),
+        signal: controller.signal,
+      });
+      const result = await response.json().catch(() => null);
+      return response.ok && result?.ok === true;
+    } catch (error) {
+      console.error(
+        "Password reset email API failed:",
+        error?.message || error,
+      );
+      return false;
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  const config = getSmtpConfig();
+  if (!config.user || !config.pass || !config.from) return false;
+  try {
+    const transporter = await createTransporter(config);
+    await transporter.sendMail({
+      from: config.from,
+      to: email,
+      subject: "Скидання пароля TaskFlow",
+      text: `Код для скидання пароля TaskFlow: ${code}\n\nКод дійсний 15 хвилин. Якщо ви не запитували скидання, проігноруйте лист.`,
+      html: `<div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;padding:28px;color:#172b3a"><h1>TaskFlow</h1><h2>Скидання пароля</h2><p>Введіть цей код на сторінці скидання пароля:</p><p style="font-size:32px;font-weight:700;letter-spacing:5px">${code}</p><p>Код дійсний 15 хвилин. Якщо ви не запитували скидання, проігноруйте лист.</p></div>`,
+    });
+    return true;
+  } catch (error) {
+    console.error(
+      "Failed to send password reset email:",
+      error?.message || error,
+    );
     return false;
   }
 }
@@ -135,7 +196,7 @@ async function verifySmtp() {
   if (!config.user || !config.pass || !config.from) {
     return {
       ok: false,
-      error: 'EMAIL_USER, EMAIL_PASS and EMAIL_FROM are required',
+      error: "EMAIL_USER, EMAIL_PASS and EMAIL_FROM are required",
       secure: config.secure,
       host: config.host,
       port: config.port,
@@ -145,7 +206,12 @@ async function verifySmtp() {
   try {
     const transporter = await createTransporter(config);
     await transporter.verify();
-    return { ok: true, secure: config.secure, host: config.host, port: config.port };
+    return {
+      ok: true,
+      secure: config.secure,
+      host: config.host,
+      port: config.port,
+    };
   } catch (error) {
     return {
       ok: false,
@@ -160,5 +226,6 @@ async function verifySmtp() {
 module.exports = {
   generateVerificationCode,
   sendVerificationEmail,
+  sendPasswordResetEmail,
   verifySmtp,
 };

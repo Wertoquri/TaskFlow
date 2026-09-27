@@ -1,18 +1,31 @@
-const fs = require('fs');
-const path = require('path');
-const dotenv = require('dotenv');
+const fs = require("fs");
+const path = require("path");
+const dotenv = require("dotenv");
 
-dotenv.config({ path: path.join(__dirname, '..', '..', '.env') });
-const { nativePool } = require('../db');
+dotenv.config({ path: path.join(__dirname, "..", "..", ".env") });
+const { nativePool } = require("../db");
 
 async function main() {
-  const filePath = path.join(__dirname, '..', 'migrations', '000_initial_schema.sql');
-  await nativePool.query(fs.readFileSync(filePath, 'utf8'));
-  console.log('Applied migration: 000_initial_schema.sql');
+  const filePath = path.join(
+    __dirname,
+    "..",
+    "migrations",
+    "000_initial_schema.sql",
+  );
+  await nativePool.query(fs.readFileSync(filePath, "utf8"));
+  console.log("Applied migration: 000_initial_schema.sql");
+  const resetMigration = path.join(
+    __dirname,
+    "..",
+    "migrations",
+    "003_password_reset.sql",
+  );
+  await nativePool.query(fs.readFileSync(resetMigration, "utf8"));
+  console.log("Applied migration: 003_password_reset.sql");
   await nativePool.end();
 }
 
 main().catch((error) => {
-  console.error('Migration failed:', error);
+  console.error("Migration failed:", error);
   process.exit(1);
 });

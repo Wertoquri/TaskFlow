@@ -103,7 +103,7 @@ const uploadTaskAttachment = async (req, res) => {
         created_at: new Date().toISOString(),
       };
       const io = req.app.get('io');
-      io && io.emit('task-activity', activity);
+      io && io.to(`project:${projectId}`).emit('task-activity', activity);
     } catch (e) {
       if (e && e.code === 'ER_NO_SUCH_TABLE') {
         console.warn('task_activity table missing; skipping activity log for attachment_added');
@@ -113,7 +113,7 @@ const uploadTaskAttachment = async (req, res) => {
     }
 
     const io = req.app.get('io');
-    io && io.emit('task-attachment-added', attachment);
+    io && io.to(`project:${projectId}`).emit('task-attachment-added', attachment);
 
     res.status(201).json({ message: 'Attachment uploaded', attachment });
   } catch (err) {
@@ -151,12 +151,15 @@ const deleteTaskAttachment = async (req, res) => {
     const taskRows = await getQuery('SELECT project_id FROM tasks WHERE id = ?', [id]);
     const projectId = taskRows[0]?.project_id;
     const rows = await getQuery(
-      'SELECT id, filename FROM task_attachments WHERE id = ? AND task_id = ?',
+      'SELECT id, filename, uploaded_by FROM task_attachments WHERE id = ? AND task_id = ?',
       [attachmentId, id]
     );
     if (!rows.length) {
       console.warn('Attachment not found for delete', { taskId: id, attachmentId });
       return res.status(404).json({ message: 'Attachment not found' });
+    }
+    if (!req.projectAccess?.admin && String(rows[0].uploaded_by) !== String(req.user.id)) {
+      return res.status(403).json({ message: 'Attachment access denied' });
     }
     const filename = rows[0].filename;
     if (/^https?:\/\//i.test(filename)) {
@@ -185,7 +188,7 @@ const deleteTaskAttachment = async (req, res) => {
     }
 
     const io = req.app.get('io');
-    io && io.emit('task-attachment-deleted', { id: Number(attachmentId), task_id: Number(id) });
+    io && io.to(`project:${projectId}`).emit('task-attachment-deleted', { id: Number(attachmentId), task_id: Number(id) });
 
     // Log activity: attachment deleted (non-fatal)
     try {
@@ -210,7 +213,7 @@ const deleteTaskAttachment = async (req, res) => {
         metadata: JSON.parse(meta),
         created_at: new Date().toISOString(),
       };
-      io && io.emit('task-activity', activity);
+      io && io.to(`project:${projectId}`).emit('task-activity', activity);
     } catch (e) {
       if (e && e.code === 'ER_NO_SUCH_TABLE') {
         console.warn('task_activity table missing; skipping activity log for attachment_deleted');
