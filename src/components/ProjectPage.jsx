@@ -321,7 +321,7 @@ const ProjectPage = () => {
                   <div className={styles.taskText}>
                     <strong>{task.title}</strong>
                     <span className={styles.taskDescription}>
-                      — {task.description}
+                      - {task.description}
                     </span>
                   </div>
                   <div className={styles.taskActions}>
@@ -460,7 +460,7 @@ const ProjectPage = () => {
                       </div>
                       <div style={{ color: "#475569", fontSize: 13 }}>
                         {title}
-                        {body ? ` — ${body}` : ""}
+                        {body ? ` - ${body}` : ""}
                       </div>
                     </div>
                     <div className={styles.activityTime}>

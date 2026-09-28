@@ -38,10 +38,10 @@ export default function ProjectCard({
   const { t, language } = useI18n();
 
   function formatDate(value) {
-    if (!value) return "—";
+    if (!value) return "-";
     const date = new Date(value);
     return Number.isNaN(date.getTime())
-      ? "—"
+      ? "-"
       : date.toLocaleDateString(language === "en" ? "en-US" : "uk-UA", {
           day: "numeric",
           month: "short",

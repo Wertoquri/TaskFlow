@@ -116,7 +116,7 @@ export default function Dashboard() {
 
   function formatDate(value) {
     const date = new Date(value);
-    if (!value || Number.isNaN(date.getTime())) return "—";
+    if (!value || Number.isNaN(date.getTime())) return "-";
     return date.toLocaleDateString(undefined, {
       day: "numeric",
       month: "short",

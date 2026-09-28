@@ -319,7 +319,7 @@ export default function Kanban({ project, filters, onAddTask }) {
                 type="button"
                 className={styles.addTaskButton}
                 onClick={onAddTask}
-                aria-label={`${t("add")} — ${col.title}`}
+                aria-label={`${t("add")} - ${col.title}`}
               >
                 <Plus aria-hidden="true" />
               </button>
@@ -341,7 +341,7 @@ export default function Kanban({ project, filters, onAddTask }) {
                     type="checkbox"
                     checked={task.status === "done"}
                     onChange={() => toggleDone(task)}
-                    aria-label={`${task.title} — ${t("kanbanDone")}`}
+                    aria-label={`${task.title} - ${t("kanbanDone")}`}
                     draggable={false}
                   />
                   <div className={styles.taskTitle}>{task.title}</div>

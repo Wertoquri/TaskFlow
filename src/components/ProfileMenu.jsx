@@ -59,8 +59,8 @@ export default function ProfileMenu({ isOpen, onToggle }) {
                   <div className={styles.avatarFallback}><UserRound aria-hidden="true" /></div>
                 )}
                 <div>
-                  <div className={styles.username}>{user.username || '—'}</div>
-                  <div style={{ color: '#64748b', fontSize: 13 }}>{user.email || '—'}</div>
+                  <div className={styles.username}>{user.username || '-'}</div>
+                  <div style={{ color: '#64748b', fontSize: 13 }}>{user.email || '-'}</div>
                 </div>
               </div>
               <div className={styles.userInfo}>
